@@ -11,7 +11,7 @@ export default function SearchBar({ value, onChange }: { value?: string; onChang
           <span className="text-slate-400 text-lg">🔍</span>
         </div>
         <input
-          className="w-full rounded-xl border border-slate-300/60 bg-white/90 backdrop-blur-sm pl-10 pr-4 py-3 outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-400 transition-all duration-200 shadow-sm hover:shadow-md"
+          className="w-full rounded-xl border border-slate-300/60 bg-white/90 backdrop-blur-sm pl-10 pr-4 py-2 md:py-3 text-sm outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-400 transition-all duration-200 shadow-sm hover:shadow-md"
           placeholder="Ara: şirket / görev / blok..."
           value={q}
           onChange={(e) => {
@@ -34,4 +34,3 @@ export default function SearchBar({ value, onChange }: { value?: string; onChang
     </div>
   )
 }
-

@@ -12,30 +12,31 @@ import { companies } from '@/lib/mock'
 // Giriş yapmamış kullanıcılar için ana giriş seçenekleri
 function LoginSelection() {
   return (
-    <div className="min-h-[60vh] flex items-center justify-center">
+    <div className="min-h-screen flex items-center justify-center px-4 py-8">
       <div className="max-w-4xl mx-auto text-center space-y-8">
+        {/* Ana Başlık */}
         <div className="space-y-4">
-          <h1 className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-indigo-600 via-purple-600 to-indigo-600 bg-clip-text text-transparent">
+          <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold bg-gradient-to-r from-indigo-600 via-purple-600 to-indigo-600 bg-clip-text text-transparent">
             NEVA YALI
           </h1>
-          <p className="text-xl text-slate-600 max-w-2xl mx-auto">
+          <p className="text-lg sm:text-xl md:text-2xl text-slate-600 max-w-2xl mx-auto">
             Taşeron yönetim sistemine hoş geldiniz. Lütfen giriş türünüzü seçiniz.
           </p>
         </div>
 
-        <div className="grid md:grid-cols-2 gap-8 max-w-3xl mx-auto">
+        <div className="grid gap-4 sm:grid-cols-2 max-w-lg mx-auto">
           {/* Şef Girişi */}
           <Link href="/admin/login" className="group">
-            <div className="card p-8 hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2 bg-gradient-to-br from-orange-50 to-red-50 border-orange-200 hover:border-orange-300">
-              <div className="space-y-4">
-                <div className="w-20 h-20 mx-auto bg-gradient-to-r from-orange-500 to-red-500 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
-                  <span className="text-3xl font-bold text-white">Ş</span>
+            <div className="card p-4 sm:p-5 hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 bg-gradient-to-br from-orange-50 to-red-50 border-orange-200 hover:border-orange-300">
+              <div className="space-y-3">
+                <div className="w-12 h-12 sm:w-14 sm:h-14 mx-auto bg-gradient-to-r from-orange-500 to-red-500 rounded-xl flex items-center justify-center group-hover:scale-105 transition-transform duration-300">
+                  <span className="text-lg sm:text-xl font-bold text-white">Ş</span>
                 </div>
-                <h3 className="text-2xl font-bold text-slate-800">Rönesans Şef Girişi</h3>
-                <p className="text-slate-600">
-                  Proje yöneticisi ve şefler için özel giriş. Görevleri onaylayın, projeyi yönetin.
+                <h3 className="text-base sm:text-lg font-semibold text-slate-800">Rönesans Şef</h3>
+                <p className="text-xs sm:text-sm text-slate-600 leading-relaxed">
+                  Proje yöneticileri için giriş
                 </p>
-                <div className="inline-flex items-center gap-2 text-orange-600 font-medium">
+                <div className="inline-flex items-center gap-2 text-orange-600 font-medium text-sm justify-center">
                   <span>Giriş Yap</span>
                   <span className="group-hover:translate-x-1 transition-transform">→</span>
                 </div>
@@ -45,16 +46,16 @@ function LoginSelection() {
 
           {/* Taşeron Girişi */}
           <Link href="/contractor/login" className="group">
-            <div className="card p-8 hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2 bg-gradient-to-br from-green-50 to-emerald-50 border-green-200 hover:border-green-300">
-              <div className="space-y-4">
-                <div className="w-20 h-20 mx-auto bg-gradient-to-r from-green-500 to-emerald-500 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
-                  <span className="text-3xl font-bold text-white">T</span>
+            <div className="card p-4 sm:p-5 hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 bg-gradient-to-br from-green-50 to-emerald-50 border-green-200 hover:border-green-300">
+              <div className="space-y-3">
+                <div className="w-12 h-12 sm:w-14 sm:h-14 mx-auto bg-gradient-to-r from-green-500 to-emerald-500 rounded-xl flex items-center justify-center group-hover:scale-105 transition-transform duration-300">
+                  <span className="text-lg sm:text-xl font-bold text-white">T</span>
                 </div>
-                <h3 className="text-2xl font-bold text-slate-800">Taşeron Girişi</h3>
-                <p className="text-slate-600">
-                  Taşeron firmalar için özel giriş. Görevlerinizi kaydedin, durumlarını güncelleyin.
+                <h3 className="text-base sm:text-lg font-semibold text-slate-800">Taşeron Girişi</h3>
+                <p className="text-xs sm:text-sm text-slate-600 leading-relaxed">
+                  Taşeron firmalar için giriş
                 </p>
-                <div className="inline-flex items-center gap-2 text-green-600 font-medium">
+                <div className="inline-flex items-center gap-2 text-green-600 font-medium text-sm justify-center">
                   <span>Giriş Yap</span>
                   <span className="group-hover:translate-x-1 transition-transform">→</span>
                 </div>

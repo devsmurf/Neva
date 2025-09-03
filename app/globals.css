@@ -23,7 +23,7 @@ body {
 }
 
 .btn {
-  @apply inline-flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition-all duration-200;
+  @apply inline-flex items-center gap-2 rounded-lg px-2.5 py-1.5 text-xs md:text-sm font-medium transition-all duration-200;
   box-shadow: 0 1px 3px rgba(0,0,0,0.1);
 }
 .btn-primary {
@@ -55,4 +55,3 @@ body {
 }
 .table { @apply min-w-[900px] w-full text-sm; }
 .th, .td { @apply px-2 md:px-3 py-2 text-left whitespace-nowrap text-xs md:text-sm; }
-
