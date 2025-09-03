@@ -1,0 +1,58 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --bg: 245 245 247;
+}
+
+html, body {
+  height: 100%;
+}
+
+body {
+  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 50%, #e2e8f0 100%);
+  background-attachment: fixed;
+  color: #0f172a;
+  min-height: 100vh;
+}
+
+.card {
+  @apply rounded-2xl border border-slate-200/60 bg-white/90 backdrop-blur-sm shadow-soft;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.08), 0 1px 3px rgba(0,0,0,0.1);
+}
+
+.btn {
+  @apply inline-flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition-all duration-200;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+.btn-primary {
+  @apply bg-gradient-to-r from-indigo-600 to-purple-600 text-white hover:from-indigo-500 hover:to-purple-500 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5;
+}
+.btn-ghost {
+  @apply text-slate-600 hover:bg-white/70 hover:text-slate-800 backdrop-blur-sm;
+}
+
+.table-wrap { 
+  @apply overflow-x-auto w-full; 
+  scroll-behavior: smooth;
+  scrollbar-width: thin;
+  scrollbar-color: #cbd5e1 #f1f5f9;
+}
+.table-wrap::-webkit-scrollbar {
+  height: 8px;
+}
+.table-wrap::-webkit-scrollbar-track {
+  background: #f1f5f9;
+  border-radius: 8px;
+}
+.table-wrap::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 8px;
+}
+.table-wrap::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+.table { @apply min-w-[900px] w-full text-sm; }
+.th, .td { @apply px-2 md:px-3 py-2 text-left whitespace-nowrap text-xs md:text-sm; }
+
