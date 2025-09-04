@@ -4,7 +4,7 @@ import TaskTable from '@/components/TaskTable'
 import TaskForm from '@/components/TaskForm'
 import { tasks } from '@/lib/mock'
 import type { Task } from '@/lib/types'
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useSession } from '@/components/SessionProvider'
 import { useTabContext } from '@/components/NavBar'
 import Link from 'next/link'
@@ -83,12 +83,27 @@ function TaskList() {
   const [showForm, setShowForm] = useState(false)
   const [selectedBlock, setSelectedBlock] = useState('')
   const [selectedCompany, setSelectedCompany] = useState('')
+  const [completedIds, setCompletedIds] = useState<string[]>([])
+
+  // Load locally completed task ids (mock persistence)
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem('neva-completed')
+      if (raw) setCompletedIds(JSON.parse(raw))
+    } catch {}
+  }, [])
 
   // Ana liste: sadece onaylı ve tamamlanmamış
-  const approvedActive = useMemo(() => tasks.filter(t => t.is_approved && !t.is_completed), [])
+  const approvedActive = useMemo(
+    () => tasks.filter(t => t.is_approved && !t.is_completed && !completedIds.includes(t.id)),
+    [completedIds]
+  )
 
   // Benim görevlerim: kendi şirketime ait tüm görevler (onaylı + onaysız)
-  const myTasks = useMemo(() => tasks.filter(t => t.company_id === user?.company_id), [])
+  const myTasks = useMemo(
+    () => tasks.filter(t => t.company_id === user?.company_id && !t.is_completed && !completedIds.includes(t.id)),
+    [user?.company_id, completedIds]
+  )
 
   // Seçilen bloka göre şirketleri filtrele
   const availableCompanies = useMemo(() => {
@@ -115,10 +130,22 @@ function TaskList() {
 
   // Görev tamamlama
   const handleComplete = (id: string) => {
-    if (confirm('Bu görevi tamamlandı olarak işaretlemek istediğinizden emin misiniz?')) {
-      alert(`Görev tamamlandı: ${id}`)
-      // Mock: Burada tasks array'inden kaldırılacak
-    }
+    if (!confirm('Bu görevi tamamlandı olarak işaretlemek istediğinizden emin misiniz?')) return
+    // Mark as completed (ids)
+    setCompletedIds((prev) => {
+      if (prev.includes(id)) return prev
+      const next = [...prev, id]
+      try { localStorage.setItem('neva-completed', JSON.stringify(next)) } catch {}
+      return next
+    })
+    // Persist completion timestamp for admin panel (mock)
+    try {
+      const raw = localStorage.getItem('neva-completed-at')
+      const map = raw ? JSON.parse(raw) as Record<string,string> : {}
+      map[id] = new Date().toISOString()
+      localStorage.setItem('neva-completed-at', JSON.stringify(map))
+    } catch {}
+    alert(`Görev tamamlandı: ${id}`)
   }
 
   const filtered = useMemo(() => {
@@ -156,35 +183,41 @@ function TaskList() {
               <label className="block text-xs font-medium text-slate-700 mb-1">
                 🏢 Blok
               </label>
-              <select
-                value={selectedBlock}
-                onChange={(e) => {
-                  setSelectedBlock(e.target.value)
-                  setSelectedCompany('') // Blok değişince şirket seçimini sıfırla
-                }}
-                className="w-full rounded-lg border border-slate-300 px-2 py-1.5 text-sm focus:ring-2 focus:ring-blue-500/50"
-              >
-                <option value="">Tüm bloklar</option>
-                {BLOCKS.map(block => (
-                  <option key={block} value={block}>{block}</option>
-                ))}
-              </select>
+              <div className="relative">
+                <select
+                  value={selectedBlock}
+                  onChange={(e) => {
+                    setSelectedBlock(e.target.value)
+                    setSelectedCompany('') // Blok değişince şirket seçimini sıfırla
+                  }}
+                  className="select-modern w-full"
+                >
+                  <option value="">Tüm bloklar</option>
+                  {BLOCKS.map(block => (
+                    <option key={block} value={block}>{block}</option>
+                  ))}
+                </select>
+                <svg className="select-caret" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+              </div>
             </div>
 
             <div>
               <label className="block text-xs font-medium text-slate-700 mb-1">
                 🏢 Şirket
               </label>
-              <select
-                value={selectedCompany}
-                onChange={(e) => setSelectedCompany(e.target.value)}
-                className="w-full rounded-lg border border-slate-300 px-2 py-1.5 text-sm focus:ring-2 focus:ring-blue-500/50"
-              >
-                <option value="">Tüm şirketler</option>
-                {availableCompanies.map(company => (
-                  <option key={company.id} value={company.id}>{company.name}</option>
-                ))}
-              </select>
+              <div className="relative">
+                <select
+                  value={selectedCompany}
+                  onChange={(e) => setSelectedCompany(e.target.value)}
+                  className="select-modern w-full"
+                >
+                  <option value="">Tüm şirketler</option>
+                  {availableCompanies.map(company => (
+                    <option key={company.id} value={company.id}>{company.name}</option>
+                  ))}
+                </select>
+                <svg className="select-caret" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+              </div>
             </div>
           </div>
 
@@ -245,10 +278,10 @@ function TaskList() {
       <div className="card p-0">
         <TaskTable
           rows={filtered}
-          currentCompanyId={user?.company_id}
-          onEdit={handleEdit}
-          onComplete={handleComplete}
-          onUpdateStatus={handleUpdateStatus}
+          currentCompanyId={activeTab === 'my' ? user?.company_id : undefined}
+          onEdit={activeTab === 'my' ? handleEdit : undefined}
+          onComplete={activeTab === 'my' ? handleComplete : undefined}
+          onUpdateStatus={activeTab === 'my' ? handleUpdateStatus : undefined}
           narrow
         />
       </div>

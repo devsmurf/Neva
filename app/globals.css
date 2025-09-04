@@ -76,6 +76,17 @@ input[type="email"], input[type="password"], input[type="text"], select {
   font-size: 16px !important;
 }
 
+/* Modern select styling */
+.select-modern {
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+  @apply rounded-xl border border-slate-300/60 bg-white/95 backdrop-blur-sm px-4 pr-10 py-2 md:py-2.5 text-sm outline-none focus:ring-2 focus:ring-indigo-500/40 focus:border-indigo-400 transition-all duration-200 shadow-sm;
+}
+.select-caret {
+  @apply pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-slate-400;
+}
+
 /* Compact density for tables without hiding columns */
 .table-compact .th, .table-compact .td { @apply px-1 py-1 text-[11px]; }
 @screen md { .table-compact .th, .table-compact .td { @apply px-3 py-2 text-sm; } }

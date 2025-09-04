@@ -64,7 +64,7 @@ export const tasks: Task[] = [
     start_date: '2025-09-01',
     due_date: '2025-09-03',
     status: 'in_progress',
-    is_completed: false,
+    is_completed: true,
     is_approved: true,
     company: companies.find(c => c.id === 'c-eps')!
   },
@@ -93,7 +93,7 @@ export const tasks: Task[] = [
     start_date: '2025-08-25',
     due_date: '2025-08-30',
     status: 'in_progress',
-    is_completed: false,
+    is_completed: true,
     is_approved: true,
     company: companies.find(c => c.id === 'c-alfa')!
   },
@@ -123,7 +123,7 @@ export const tasks: Task[] = [
     start_date: '2025-10-01',
     due_date: '2025-10-15',
     status: 'planned',
-    is_completed: false,
+    is_completed: true,
     is_approved: false, // Onay bekliyor
     company: companies.find(c => c.id === 'c-gamma')!
   },
