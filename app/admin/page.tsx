@@ -74,8 +74,8 @@ function ApprovalQueue({ queue }: { queue: any[] }) {
       </div>
 
       {queue.map(task => (
-        <div key={task.id} className="card p-6">
-          <div className="flex items-start justify-between">
+        <div key={task.id} className="card p-4 md:p-6">
+          <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-3 md:gap-4">
             <div className="flex-1">
               <div className="flex items-center gap-3 mb-3">
                 <span className="px-3 py-1 bg-amber-100 text-amber-800 rounded-lg text-sm font-medium">
@@ -90,7 +90,7 @@ function ApprovalQueue({ queue }: { queue: any[] }) {
                 {task.title}
               </h3>
 
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 text-xs md:text-sm">
                 <div>
                   <span className="text-slate-500">Blok:</span>
                   <span className="ml-2 font-medium">{task.block}</span>
@@ -110,18 +110,22 @@ function ApprovalQueue({ queue }: { queue: any[] }) {
               </div>
             </div>
 
-            <div className="flex gap-2 ml-4">
+            <div className="flex gap-2 md:ml-4 md:self-start mt-2 md:mt-0">
               <button
                 onClick={() => handleApprove(task.id)}
-                className="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg font-medium transition-colors"
+                className="inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs md:text-sm font-medium transition-all shadow-sm border border-green-200 bg-green-50 text-green-700 hover:bg-green-100"
+                aria-label="Onayla"
               >
-                ✅ Onayla
+                <span>✅</span>
+                <span>Onayla</span>
               </button>
               <button
                 onClick={() => handleReject(task.id)}
-                className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg font-medium transition-colors"
+                className="inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs md:text-sm font-medium transition-all shadow-sm border border-red-200 bg-red-50 text-red-700 hover:bg-red-100"
+                aria-label="Reddet"
               >
-                ❌ Reddet
+                <span>❌</span>
+                <span>Reddet</span>
               </button>
             </div>
           </div>
@@ -377,4 +381,3 @@ export default function AdminPage() {
     </div>
   )
 }
-

@@ -7,7 +7,7 @@ import { usePathname } from 'next/navigation'
 // NavBar ile padding'i birlikte yöneten component  
 function NavBarWithPadding() {
     return (
-        <div className="pt-40 md:pt-48"> {/* Çok daha fazla üst padding - navbar'ı çok aşağı al */}
+        <div className="pt-24 md:pt-28"> {/* Sabit header yüksekliği ile uyumlu padding */}
             <div className="mx-auto max-w-7xl p-2 md:p-4 lg:p-6">
                 <NavBar />
             </div>
