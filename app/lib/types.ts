@@ -18,6 +18,9 @@ export type Task = {
   project_id: string
   company_id: string
   block: string
+  floor?: number | null
+  floor_from?: number | null
+  floor_to?: number | null
   title: string
   start_date: string // YYYY-MM-DD
   due_date: string   // YYYY-MM-DD
@@ -27,4 +30,3 @@ export type Task = {
   notes?: string | null
   company?: Company
 }
-

@@ -26,7 +26,7 @@ function MainContainer({ children }: { children: ReactNode }) {
     }
 
     return (
-        <div className="mx-auto max-w-7xl p-2 md:p-4 lg:p-6">
+        <div className="mx-auto max-w-7xl p-2 md:p-4 lg:p-6 overflow-x-hidden">
             {children}
         </div>
     )

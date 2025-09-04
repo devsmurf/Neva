@@ -14,6 +14,8 @@ type Props = {
 }
 
 export default function TaskTable({ rows, currentCompanyId, onComplete, onEdit, onUpdateStatus, showDeleteButton, narrow }: Props) {
+  const formatFloor = (k: number) => (k < 0 ? `B${Math.abs(k)}` : `${k}`)
+  const formatBlock = (b: string) => b.replace(/\s*blok\s*$/i, '').trim()
   const sorted = [...rows].sort((a, b) => {
     const la = isLate(a), lb = isLate(b)
     if (la !== lb) return la ? -1 : 1 // kırmızılar en üstte
@@ -33,8 +35,9 @@ export default function TaskTable({ rows, currentCompanyId, onComplete, onEdit, 
         <table className={clsx('table table-compact', narrow && 'table-narrow')}>
           <thead>
             <tr className="bg-slate-50">
-              <th className="th sticky-col-1 w-20 z-20">Blok</th>
-              <th className="th sticky-col-2 w-40 z-20">Şirket</th>
+              <th className="th w-40 cmp md:sticky md:left-0 md:z-20 md:bg-slate-50">Şirket</th>
+              <th className="th w-20 blk">Blok</th>
+              <th className="th w-16 kat">Kat</th>
               <th className="th">Görev</th>
               <th className="th">Başlangıç</th>
               <th className="th">Bitiş</th>
@@ -58,8 +61,9 @@ export default function TaskTable({ rows, currentCompanyId, onComplete, onEdit, 
                     'border-b border-slate-100'
                   )}
                 >
-                  <td className="td sticky-col-1 w-20 font-medium z-10">{t.block}</td>
-                  <td className="td sticky-col-2 w-40 z-10">{t.company?.name}</td>
+                  <td className="td w-40 font-semibold text-blue-600 cmp md:sticky md:left-0 md:z-10 md:bg-inherit">{t.company?.name}</td>
+                  <td className="td w-20 font-medium blk">{formatBlock(t.block)}</td>
+                  <td className="td w-16 kat">{t.floor_from != null && t.floor_to != null ? `${formatFloor(t.floor_from)}–${formatFloor(t.floor_to)}` : (t.floor != null ? `${formatFloor(t.floor)}` : '—')}</td>
                   <td className="td">{t.title}</td>
                   <td className="td tabular-nums">{t.start_date}</td>
                   <td className="td tabular-nums">{t.due_date}</td>

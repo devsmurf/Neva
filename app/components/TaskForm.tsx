@@ -1,5 +1,5 @@
 "use client"
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import type { Task } from '@/lib/types'
 import { companies } from '@/lib/mock'
 
@@ -10,6 +10,13 @@ type Props = {
 
 // Blok seçenekleri
 const BLOCKS = ['A Blok', 'B Blok', 'C Blok', 'D Blok', 'E Blok']
+const FLOOR_MAP: Record<string, number> = {
+  'A Blok': 28,
+  'B Blok': 38,
+  'C Blok': 28,
+  'D Blok': 18,
+  'E Blok': 28,
+}
 
 // Bugünün tarihini YYYY-MM-DD formatında al
 const today = new Date().toISOString().split('T')[0]
@@ -24,6 +31,9 @@ const addDays = (date: string, days: number): string => {
 export default function TaskForm({ initial, onSubmit }: Props) {
   const [form, setForm] = useState<Partial<Task>>({
     block: '',
+    floor: null,
+    floor_from: null,
+    floor_to: null,
     title: '',
     start_date: today,
     due_date: addDays(today, 7), // Varsayılan olarak 1 hafta sonra
@@ -34,6 +44,17 @@ export default function TaskForm({ initial, onSubmit }: Props) {
   // Bağımlılık durumu
   const [hasDependency, setHasDependency] = useState(false)
   const [dependentCompany, setDependentCompany] = useState('')
+  const [useRange, setUseRange] = useState(false)
+
+  const floors = useMemo(() => {
+    const n = FLOOR_MAP[form.block || '']
+    if (!n) return [] as number[]
+    const list: number[] = [-2, -1]
+    for (let i = 1; i <= n; i++) list.push(i)
+    return list
+  }, [form.block])
+
+  const formatFloor = (k: number) => (k < 0 ? `B${Math.abs(k)}` : `${k}`)
 
   // Hızlı tarih seçenekleri
   const quickDateOptions = [
@@ -82,6 +103,21 @@ export default function TaskForm({ initial, onSubmit }: Props) {
             alert('Lütfen tüm alanları doldurun')
             return
           }
+          if (!useRange) {
+            if (floors.length && (form.floor === undefined || form.floor === null)) {
+              alert('Lütfen bir kat seçiniz')
+              return
+            }
+          } else {
+            if (floors.length && (form.floor_from === null || form.floor_to === null)) {
+              alert('Lütfen kat aralığı seçiniz')
+              return
+            }
+            if ((form.floor_from as number) > (form.floor_to as number)) {
+              alert('Başlangıç katı, bitiş katından büyük olamaz')
+              return
+            }
+          }
           if (new Date(form.due_date) < new Date(form.start_date)) {
             alert('Bitiş tarihi başlangıç tarihinden önce olamaz')
             return
@@ -98,7 +134,7 @@ export default function TaskForm({ initial, onSubmit }: Props) {
             required
             className="w-full rounded-xl border border-slate-300/60 bg-white/90 backdrop-blur-sm px-4 py-3 outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-400 transition-all duration-200"
             value={form.block || ''}
-            onChange={e => setForm(f => ({ ...f, block: e.target.value }))}
+            onChange={e => setForm(f => ({ ...f, block: e.target.value, floor: null, floor_from: null, floor_to: null }))}
           >
             <option value="">Blok seçiniz...</option>
             {BLOCKS.map(block => (
@@ -106,6 +142,72 @@ export default function TaskForm({ initial, onSubmit }: Props) {
             ))}
           </select>
         </div>
+
+        {/* Kat Seçimi */}
+        {form.block && (
+          <div>
+            <div className="flex items-center justify-between mb-2">
+              <label className="block text-sm font-medium text-slate-700">
+                🏢 Kat Seçimi
+              </label>
+              <label className="flex items-center gap-2 text-xs text-slate-600">
+                <input
+                  type="checkbox"
+                  checked={useRange}
+                  onChange={(e) => setUseRange(e.target.checked)}
+                />
+                Kat aralığı seç
+              </label>
+            </div>
+
+            {!useRange ? (
+              <select
+                required
+                className="w-full rounded-xl border border-slate-300/60 bg-white/90 backdrop-blur-sm px-4 py-3 outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-400 transition-all duration-200"
+                value={form.floor ?? ''}
+                onChange={(e) => setForm(f => ({ ...f, floor: Number(e.target.value) }))}
+              >
+                <option value="">Kat seçiniz...</option>
+                {floors.map(k => (
+                  <option key={k} value={k}>{formatFloor(k)}</option>
+                ))}
+              </select>
+            ) : (
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs text-slate-600 mb-1">Başlangıç katı</label>
+                  <select
+                    required
+                    className="w-full rounded-xl border border-slate-300/60 bg-white/90 backdrop-blur-sm px-3 py-2.5 outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-400 transition-all duration-200"
+                    value={form.floor_from ?? ''}
+                    onChange={(e) => setForm(f => ({ ...f, floor_from: Number(e.target.value) }))}
+                  >
+                    <option value="">Seçiniz</option>
+                    {floors.map(k => (
+                      <option key={k} value={k}>{formatFloor(k)}</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs text-slate-600 mb-1">Bitiş katı</label>
+                  <select
+                    required
+                    className="w-full rounded-xl border border-slate-300/60 bg-white/90 backdrop-blur-sm px-3 py-2.5 outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-400 transition-all duration-200"
+                    value={form.floor_to ?? ''}
+                    onChange={(e) => setForm(f => ({ ...f, floor_to: Number(e.target.value) }))}
+                  >
+                    <option value="">Seçiniz</option>
+                    {floors.map(k => (
+                      <option key={k} value={k}>{formatFloor(k)}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+            )}
+
+            <p className="text-xs text-slate-500 mt-2">Seçili blok: {form.block}. Kat seçenekleri: B2, B1 ve 1'den {FLOOR_MAP[form.block] || 0}'e kadar.</p>
+          </div>
+        )}
 
         {/* Görev Başlığı */}
         <div>
@@ -283,4 +385,3 @@ export default function TaskForm({ initial, onSubmit }: Props) {
     </div>
   )
 }
-

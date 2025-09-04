@@ -7,7 +7,7 @@ export default function HeaderCounter({ project }: { project: Project }) {
 
   return (
     <div
-      className="fixed top-0 left-0 right-0 z-50 bg-gradient-to-r from-indigo-600 via-purple-600 to-indigo-700 shadow-lg border-b-4 border-white/20"
+      className="fixed top-0 left-0 right-0 z-50 bg-gradient-to-r from-indigo-600 via-purple-600 to-indigo-700 shadow-lg border-b-4 border-white/20 overflow-x-hidden"
       style={{ paddingTop: 'env(safe-area-inset-top)' }}
     >
       <div className="mx-auto max-w-7xl px-4 md:px-6 lg:px-8">

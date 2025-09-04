@@ -8,6 +8,7 @@
 
 html, body {
   height: 100%;
+  overflow-x: hidden; /* Prevent multi-layer horizontal scroll; delegate to table-wrap */
 }
 
 body {
@@ -37,6 +38,9 @@ body {
   scroll-behavior: smooth;
   scrollbar-width: thin;
   scrollbar-color: #cbd5e1 #f1f5f9;
+  overflow-y: hidden;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-x: contain;
 }
 .table-wrap::-webkit-scrollbar {
   height: 8px;
@@ -53,9 +57,34 @@ body {
   background: #94a3b8;
 }
 .table { @apply min-w-[900px] w-full text-sm; }
-.th, .td { @apply px-2 md:px-3 py-2 text-left whitespace-nowrap text-xs md:text-sm; }
+/* Header cells centered, data cells left-aligned */
+.th { @apply px-2 md:px-3 py-2 text-center whitespace-nowrap text-xs md:text-sm text-black; }
+.td { @apply px-2 md:px-3 py-2 text-left whitespace-nowrap text-xs md:text-sm; }
+/* Subtle vertical separators between columns (lighter grey) */
+.th, .td { border-left: 1px solid rgba(148,163,184,0.2); /* slate-400/20 */ }
+.th:first-child, .td:first-child { border-left: 0; }
+
+/* Force center alignment for specific cells (e.g., Kat column) */
+.th.kat, .td.kat { text-align: center !important; }
+/* Center align for Block column */
+.th.blk, .td.blk { text-align: center !important; }
+/* Center align for Company column */
+.th.cmp, .td.cmp { text-align: center !important; }
 
 /* Mobilde input'lara basınca zoom olmasın */
 input[type="email"], input[type="password"], input[type="text"], select {
   font-size: 16px !important;
 }
+
+/* Compact density for tables without hiding columns */
+.table-compact .th, .table-compact .td { @apply px-1 py-1 text-[11px]; }
+@screen md { .table-compact .th, .table-compact .td { @apply px-3 py-2 text-sm; } }
+
+/* Sticky first columns for wide horizontal scroll usability */
+.sticky-col-1 { position: sticky; left: 0; z-index: 10; background: inherit; }
+/* first column fixed width = 5rem (w-20); second = 4rem (w-16); third offset = 9rem */
+.sticky-col-2 { position: sticky; left: 5rem; z-index: 10; background: inherit; }
+.sticky-col-3 { position: sticky; left: 9rem; z-index: 10; background: inherit; }
+
+/* Narrow table variant for contractor views */
+.table-narrow { min-width: 720px; }
