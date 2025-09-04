@@ -1,14 +1,14 @@
 "use client"
 import type { ReactNode } from 'react'
-import NavBar from './NavBar'
+import NavBar, { TabProvider } from './NavBar'
 import { useSession } from './SessionProvider'
 import { usePathname } from 'next/navigation'
 
 // NavBar ile padding'i birlikte yöneten component  
 function NavBarWithPadding() {
     return (
-        <div className="pt-20 md:pt-24"> {/* Sabit header için üst padding */}
-            <div className="mx-auto max-w-7xl p-3 md:p-6 lg:p-8">
+        <div className="pt-40 md:pt-48"> {/* Çok daha fazla üst padding - navbar'ı çok aşağı al */}
+            <div className="mx-auto max-w-7xl p-2 md:p-4 lg:p-6">
                 <NavBar />
             </div>
         </div>
@@ -20,13 +20,13 @@ function MainContainer({ children }: { children: ReactNode }) {
     const { user } = useSession()
     const pathname = usePathname()
 
-    // Ana sayfada ve kullanıcı giriş yapmamışsa container padding'ini kaldır
-    if (pathname === '/' && !user) {
+    // Ana sayfada, login sayfalarında ve kullanıcı giriş yapmamışsa container padding'ini kaldır
+    if ((pathname === '/' && !user) || pathname === '/admin/login' || pathname === '/contractor/login') {
         return <>{children}</>
     }
 
     return (
-        <div className="mx-auto max-w-7xl p-3 md:p-6 lg:p-8">
+        <div className="mx-auto max-w-7xl p-2 md:p-4 lg:p-6">
             {children}
         </div>
     )
@@ -34,11 +34,11 @@ function MainContainer({ children }: { children: ReactNode }) {
 
 export default function ClientLayout({ children }: { children: ReactNode }) {
     return (
-        <>
+        <TabProvider>
             <NavBarWithPadding />
             <MainContainer>
                 {children}
             </MainContainer>
-        </>
+        </TabProvider>
     )
 }

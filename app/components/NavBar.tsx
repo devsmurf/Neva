@@ -2,10 +2,64 @@
 import Link from 'next/link'
 import { useSession } from './SessionProvider'
 import { usePathname } from 'next/navigation'
+import { useState, createContext, useContext } from 'react'
+
+// Tab context for contractor navigation
+type TabContextType = {
+  activeTab: 'all' | 'my'
+  setActiveTab: (tab: 'all' | 'my') => void
+}
+
+const TabContext = createContext<TabContextType | null>(null)
+
+export const useTabContext = () => {
+  const context = useContext(TabContext)
+  if (!context) {
+    throw new Error('useTabContext must be used within a TabProvider')
+  }
+  return context
+}
+
+export const TabProvider = ({ children }: { children: React.ReactNode }) => {
+  const [activeTab, setActiveTab] = useState<'all' | 'my'>('all')
+  return (
+    <TabContext.Provider value={{ activeTab, setActiveTab }}>
+      {children}
+    </TabContext.Provider>
+  )
+}
+
+// Tab navigation for contractors
+function TabNavigation() {
+  const { activeTab, setActiveTab } = useTabContext()
+
+  return (
+    <div className="flex items-center gap-0.5 md:gap-1">
+      <button
+        className={`btn text-[10px] md:text-xs px-1 md:px-2 py-0.5 ${activeTab === 'all' ? 'btn-primary' : 'btn-ghost'}`}
+        onClick={() => setActiveTab('all')}
+      >
+        📋 Ana Liste
+      </button>
+      <span className="text-slate-400 text-[10px] md:text-xs">/</span>
+      <button
+        className={`btn text-[10px] md:text-xs px-1 md:px-2 py-0.5 ${activeTab === 'my' ? 'btn-primary' : 'btn-ghost'}`}
+        onClick={() => setActiveTab('my')}
+      >
+        📁 Görevlerim
+      </button>
+    </div>
+  )
+}
 
 export default function NavBar() {
   const { user, logout } = useSession()
   const pathname = usePathname()
+
+  // Hide navbar on specific login routes
+  if (pathname === '/admin/login' || pathname === '/contractor/login') {
+    return null
+  }
 
   // Ana sayfada ve kullanıcı giriş yapmamışsa navbar'ı gizle
   if (pathname === '/' && !user) {
@@ -13,29 +67,51 @@ export default function NavBar() {
   }
 
   return (
-    <div className="bg-white/80 backdrop-blur-md rounded-2xl p-4 mb-6 shadow-lg border border-white/40">
-      <div className="flex items-center justify-between">
-        <Link href="/" className="text-base md:text-lg font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent hover:from-indigo-500 hover:to-purple-500 transition-all duration-200">
-          NEVA YALI
-        </Link>
-        <div className="flex items-center gap-2">
-          {user && <Link className="btn btn-ghost" href="/">📋 Ana Liste</Link>}
+    <div className="bg-white rounded-xl p-2 md:p-2.5 mb-4 shadow-sm border border-slate-200">
+      {/* Mobil ve desktop layout */}
+      <div className="flex items-center justify-between gap-1 md:gap-2">
+        {/* Sol taraf - Sadece Logo Yazısı */}
+        <div className="flex items-center min-w-0">
+          <Link href="/" className="text-sm md:text-base font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent hover:from-indigo-500 hover:to-purple-500 transition-all duration-200 truncate">
+            NEVA YALI
+          </Link>
+        </div>
+
+        {/* Orta - Navigation butonları */}
+        <div className="flex items-center justify-center flex-shrink-0">
           {user?.role === 'user' && (
-            <Link className="btn btn-ghost" href="/">🔧 Görevlerim</Link>
+            <TabNavigation />
           )}
           {user?.role === 'admin' && (
-            <Link className="btn btn-ghost" href="/admin">📋 Panelim</Link>
-          )}
-          <div className="w-px h-6 bg-slate-300/60 mx-2" />
-          {user ? (
-            <div className="flex items-center gap-3">
-              <div className="px-3 py-1 bg-gradient-to-r from-indigo-50 to-purple-50 rounded-lg border border-indigo-200">
-                <span className="text-sm font-medium text-indigo-700">{user.company_name}</span>
-              </div>
-              <button className="btn btn-primary" onClick={logout}>Çıkış</button>
+            <div className="flex items-center gap-0.5 md:gap-1">
+              <Link
+                className={`btn text-[10px] md:text-xs px-1 md:px-2 py-0.5 ${pathname === '/' ? 'btn-primary' : 'btn-ghost'}`}
+                href="/"
+              >
+                📋 Ana Liste
+              </Link>
+              <span className="text-slate-400 text-[10px] md:text-xs">/</span>
+              <Link
+                className={`btn text-[10px] md:text-xs px-1 md:px-2 py-0.5 ${pathname === '/admin' ? 'btn-primary' : 'btn-ghost'}`}
+                href="/admin"
+              >
+                👑 Panelim
+              </Link>
             </div>
+          )}
+        </div>
+
+        {/* Sağ taraf - Şirket ismi ve Çıkış */}
+        <div className="flex items-center gap-0.5 md:gap-1 justify-end min-w-0">
+          {user ? (
+            <>
+              <div className="px-1 md:px-1.5 py-0.5 bg-slate-50 rounded-md border border-slate-200 min-w-0">
+                <span className="text-[10px] md:text-xs font-medium text-slate-700 truncate block">{user.company_name}</span>
+              </div>
+              <button className="btn btn-primary text-[10px] md:text-xs px-1 md:px-2 py-0.5 flex-shrink-0" onClick={logout}>Çıkış</button>
+            </>
           ) : (
-            <Link className="btn btn-primary" href="/login">Giriş</Link>
+            <Link className="btn btn-primary text-[10px] md:text-xs px-1 md:px-2 py-0.5" href="/login">Giriş</Link>
           )}
         </div>
       </div>

@@ -42,26 +42,34 @@ export default function ContractorLoginPage() {
     }
 
     return (
-        <div className="min-h-[70vh] flex items-center justify-center">
-            <div className="max-w-md mx-auto">
-                <div className="card p-8">
-                    <div className="text-center mb-8">
-                        <div className="w-20 h-20 mx-auto bg-gradient-to-r from-green-500 to-emerald-500 rounded-2xl flex items-center justify-center mb-4">
-                            <span className="text-3xl font-bold text-white">T</span>
+        <div className="h-screen w-screen flex items-center justify-center bg-white px-4 overflow-hidden fixed inset-0">
+            {/* Sol üst geri butonu */}
+            <Link href="/" className="absolute top-32 left-3 z-[9999] inline-flex items-center justify-center w-10 h-10 text-slate-700 hover:text-green-600 text-lg transition-all duration-200 bg-white rounded-full shadow-lg border-2 border-slate-200 hover:border-green-400 hover:shadow-xl">
+                <span>←</span>
+            </Link>
+
+            <div className="w-full max-w-xs">
+                <div className="bg-white rounded-xl shadow-md border border-gray-200 p-4">
+                    {/* Header */}
+                    <div className="text-center mb-4">
+                        <div className="w-12 h-12 mx-auto bg-gradient-to-r from-green-500 to-emerald-500 rounded-lg flex items-center justify-center mb-2 shadow-lg">
+                            <span className="text-lg font-bold text-white">T</span>
                         </div>
-                        <h1 className="text-2xl font-bold text-slate-800">Taşeron Girişi</h1>
-                        <p className="text-slate-600 mt-2">
-                            Şirketinizi seçin ve şifrenizi girin
+                        <h1 className="text-base font-bold text-slate-800 mb-1">
+                            Taşeron Girişi
+                        </h1>
+                        <p className="text-slate-600 text-xs">
+                            Şirketinizi seçin ve giriş yapın
                         </p>
                     </div>
 
-                    <div className="space-y-4">
+                    <div className="space-y-3">
                         <div>
-                            <label className="block text-sm font-medium text-slate-700 mb-1">
-                                Şirket Seçin
+                            <label className="block text-xs font-medium text-slate-700 mb-1">
+                                🏢 Şirket Seçin
                             </label>
                             <select
-                                className="w-full rounded-xl border border-slate-300/60 bg-white/90 backdrop-blur-sm px-4 py-3 outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-400 transition-all duration-200"
+                                className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-green-500/50 focus:border-green-400 transition-all duration-200"
                                 value={selectedCompany}
                                 onChange={(e) => setSelectedCompany(e.target.value)}
                             >
@@ -75,45 +83,32 @@ export default function ContractorLoginPage() {
                         </div>
 
                         <div>
-                            <label className="block text-sm font-medium text-slate-700 mb-1">
-                                Şirket Şifresi
+                            <label className="block text-xs font-medium text-slate-700 mb-1">
+                                🔐 Şirket Şifresi
                             </label>
                             <input
                                 type="password"
-                                className="w-full rounded-xl border border-slate-300/60 bg-white/90 backdrop-blur-sm px-4 py-3 outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-400 transition-all duration-200"
+                                className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-green-500/50 focus:border-green-400 transition-all duration-200"
                                 value={password}
                                 onChange={(e) => setPassword(e.target.value)}
                                 placeholder="Şirket şifrenizi girin"
                             />
-                            <p className="text-xs text-slate-500 mt-1">
-                                Demo için şifre: <code className="bg-slate-100 px-1 rounded">123456</code>
-                            </p>
+                            <div className="mt-1 p-2 bg-green-50 rounded-lg border border-green-200">
+                                <p className="text-xs text-green-700">
+                                    💡 Demo şifre: <code className="bg-green-100 px-1 py-0.5 rounded text-xs">123456</code>
+                                </p>
+                            </div>
                         </div>
 
                         <button
-                            className="w-full bg-gradient-to-r from-green-500 to-emerald-500 text-white py-3 px-4 rounded-xl font-medium hover:from-green-600 hover:to-emerald-600 transition-all duration-200 transform hover:-translate-y-0.5 shadow-lg hover:shadow-xl"
+                            className="w-full bg-gradient-to-r from-green-500 to-emerald-500 text-white py-2.5 px-4 rounded-lg font-medium hover:from-green-600 hover:to-emerald-600 transition-all duration-200 shadow-md hover:shadow-lg mt-3"
                             onClick={handleSubmit}
                         >
                             Taşeron Paneline Giriş
                         </button>
                     </div>
 
-                    <div className="mt-8 pt-6 border-t border-slate-200">
-                        <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-                            <h4 className="font-medium text-green-800 mb-2">Mevcut Şirketler:</h4>
-                            <ul className="text-sm text-green-700 space-y-1">
-                                {companies.map(company => (
-                                    <li key={company.id}>• {company.name}</li>
-                                ))}
-                            </ul>
-                        </div>
 
-                        <div className="text-center mt-4">
-                            <Link href="/" className="text-slate-500 hover:text-slate-700 text-sm">
-                                ← Ana sayfaya dön
-                            </Link>
-                        </div>
-                    </div>
                 </div>
             </div>
         </div>

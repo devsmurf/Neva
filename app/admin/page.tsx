@@ -176,7 +176,7 @@ export default function AdminPage() {
 
   return (
     <div className="space-y-6">
-      <div className="bg-gradient-to-r from-red-50 to-orange-50 border border-red-200 rounded-2xl p-6">
+      <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm">
         <div className="flex items-center gap-3">
           <div className="w-12 h-12 bg-gradient-to-r from-red-500 to-orange-500 rounded-xl flex items-center justify-center">
             <span className="text-xl text-white">👑</span>

@@ -7,6 +7,15 @@ export default function HeaderCounter({ project }: { project: Project }) {
 
   return (
     <div className="fixed top-0 left-0 right-0 z-50 bg-gradient-to-r from-indigo-600 via-purple-600 to-indigo-700 shadow-lg border-b-4 border-white/20">
+      {/* Sol taraf about icon - büyük ve eşit boşluklarla */}
+      <div className="absolute top-1/2 left-4 md:left-6 transform -translate-y-1/2 z-10">
+        <div className="w-12 h-12 md:w-14 md:h-14 bg-white rounded-xl p-2 md:p-2.5 shadow-lg hover:shadow-xl transition-all duration-200 cursor-pointer">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 181 150" className="w-full h-full">
+            <path d="M0 7.563c.133-.242 13.457-4.914 29.535-6.357 44.882-4.016 83.944 2.04 103.812 17.517 13.486 10.495 12.812 32.625-1.155 41.172-15.711 9.63-34.588 10.496-66.98 13.774-7.567.763-18.713 1.792-18.713 2.716 0 1.187 49.786 25.826 58.625 30.268 10.669 5.36 72.876 40.214 75.046 42.772 1.2 1.41-7.764-.092-9.79-1.094-10.831-5.403-22.904-12.02-23.803-9.346-.905 2.673 5.383 7.647.899 7.647-1.804 0-37.394-17.403-41.578-19.715-3.317-1.813-11.75-5.806-12.983-3.16-1.062 2.294 2.183 8.533-.813 7.774-3.003-.763-55.46-24.842-69.977-34.72C6.651 86.291 2.598 71.547 12.54 62.657c15.88-14.217 36.6-11.84 65.123-15.588 10.335-1.36 27.723-3.927 27.547-13.265-.34-17.433-17.929-22.225-56.215-26.221-11.656-1.22-18.345-1.301-32.652.327-4.008.453-1.778-1.756-7.765-.706C3.49 8.1-.09 7.719 0 7.563" fill="#003DA6" />
+          </svg>
+        </div>
+      </div>
+
       <div className="mx-auto max-w-7xl px-4 md:px-6 lg:px-8">
         <div className="py-4 md:py-5">
           <div className="flex items-center justify-center">
