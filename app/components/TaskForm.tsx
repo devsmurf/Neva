@@ -122,7 +122,10 @@ export default function TaskForm({ initial, onSubmit }: Props) {
             alert('Bitiş tarihi başlangıç tarihinden önce olamaz')
             return
           }
-          onSubmit?.(form)
+          onSubmit?.({
+            ...form,
+            dependent_company_id: hasDependency && dependentCompany ? dependentCompany : null,
+          })
         }}
       >
         {/* Blok Seçimi */}

@@ -3,6 +3,7 @@ import Link from 'next/link'
 import { useSession } from './SessionProvider'
 import { usePathname } from 'next/navigation'
 import { useState, createContext, useContext } from 'react'
+import { useRouter } from 'next/navigation'
 
 // Tab context for contractor navigation
 type TabContextType = {
@@ -55,6 +56,7 @@ function TabNavigation() {
 export default function NavBar() {
   const { user, logout } = useSession()
   const pathname = usePathname()
+  const router = useRouter()
 
   // Hide navbar on specific login routes
   if (pathname === '/admin/login' || pathname === '/contractor/login') {
@@ -108,7 +110,12 @@ export default function NavBar() {
               <div className="px-1 md:px-1.5 py-0.5 bg-slate-50 rounded-md border border-slate-200 min-w-0">
                 <span className="text-[10px] md:text-xs font-medium text-slate-700 truncate block">{user.company_name}</span>
               </div>
-              <button className="btn btn-primary text-[10px] md:text-xs px-1 md:px-2 py-0.5 flex-shrink-0" onClick={logout}>Çıkış</button>
+              <button
+                className="btn btn-primary text-[10px] md:text-xs px-1 md:px-2 py-0.5 flex-shrink-0"
+                onClick={() => { logout(); router.push('/') }}
+              >
+                Çıkış
+              </button>
             </>
           ) : (
             <Link className="btn btn-primary text-[10px] md:text-xs px-1 md:px-2 py-0.5" href="/login">Giriş</Link>

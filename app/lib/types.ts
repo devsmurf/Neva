@@ -28,5 +28,6 @@ export type Task = {
   is_completed: boolean
   is_approved: boolean
   notes?: string | null
+  dependent_company_id?: string | null
   company?: Company
 }
