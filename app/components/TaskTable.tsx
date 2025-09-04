@@ -10,9 +10,10 @@ type Props = {
   onEdit?: (id: string) => void
   onUpdateStatus?: (id: string, status: 'planned' | 'in_progress') => void
   showDeleteButton?: boolean
+  narrow?: boolean
 }
 
-export default function TaskTable({ rows, currentCompanyId, onComplete, onEdit, onUpdateStatus, showDeleteButton }: Props) {
+export default function TaskTable({ rows, currentCompanyId, onComplete, onEdit, onUpdateStatus, showDeleteButton, narrow }: Props) {
   const sorted = [...rows].sort((a, b) => {
     const la = isLate(a), lb = isLate(b)
     if (la !== lb) return la ? -1 : 1 // kırmızılar en üstte
@@ -29,11 +30,11 @@ export default function TaskTable({ rows, currentCompanyId, onComplete, onEdit, 
         💡 Tabloyu görmek için yatay kaydırın →
       </div>
       <div className="table-wrap">
-        <table className="table">
+        <table className={clsx('table table-compact', narrow && 'table-narrow')}>
           <thead>
             <tr className="bg-slate-50">
-              <th className="th">Blok</th>
-              <th className="th">Şirket</th>
+              <th className="th sticky-col-1 w-20 z-20">Blok</th>
+              <th className="th sticky-col-2 w-40 z-20">Şirket</th>
               <th className="th">Görev</th>
               <th className="th">Başlangıç</th>
               <th className="th">Bitiş</th>
@@ -57,8 +58,8 @@ export default function TaskTable({ rows, currentCompanyId, onComplete, onEdit, 
                     'border-b border-slate-100'
                   )}
                 >
-                  <td className="td font-medium">{t.block}</td>
-                  <td className="td">{t.company?.name}</td>
+                  <td className="td sticky-col-1 w-20 font-medium z-10">{t.block}</td>
+                  <td className="td sticky-col-2 w-40 z-10">{t.company?.name}</td>
                   <td className="td">{t.title}</td>
                   <td className="td tabular-nums">{t.start_date}</td>
                   <td className="td tabular-nums">{t.due_date}</td>

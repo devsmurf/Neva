@@ -249,6 +249,7 @@ function TaskList() {
           onEdit={handleEdit}
           onComplete={handleComplete}
           onUpdateStatus={handleUpdateStatus}
+          narrow
         />
       </div>
     </div>

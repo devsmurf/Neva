@@ -34,19 +34,19 @@ function TabNavigation() {
   const { activeTab, setActiveTab } = useTabContext()
 
   return (
-    <div className="flex items-center gap-0.5 md:gap-1">
+    <div className="flex items-center gap-0.5 md:gap-1 scale-[0.85] md:scale-100">
       <button
-        className={`btn text-[10px] md:text-xs px-1 md:px-2 py-0.5 ${activeTab === 'all' ? 'btn-primary' : 'btn-ghost'}`}
+        className={`btn text-[8px] md:text-xs px-1 md:px-2 py-0 shadow-none md:shadow ${activeTab === 'all' ? 'btn-primary' : 'btn-ghost'} transform-none`}
         onClick={() => setActiveTab('all')}
       >
-        📋 Ana Liste
+        <span className="hidden md:inline">📋 </span>Ana Liste
       </button>
-      <span className="text-slate-400 text-[10px] md:text-xs">/</span>
+      <span className="text-slate-400 text-[8px] md:text-xs">/</span>
       <button
-        className={`btn text-[10px] md:text-xs px-1 md:px-2 py-0.5 ${activeTab === 'my' ? 'btn-primary' : 'btn-ghost'}`}
+        className={`btn text-[8px] md:text-xs px-1 md:px-2 py-0 shadow-none md:shadow ${activeTab === 'my' ? 'btn-primary' : 'btn-ghost'} transform-none`}
         onClick={() => setActiveTab('my')}
       >
-        📁 Görevlerim
+        <span className="hidden md:inline">📁 </span>Görevlerim
       </button>
     </div>
   )
@@ -78,24 +78,24 @@ export default function NavBar() {
         </div>
 
         {/* Orta - Navigation butonları */}
-        <div className="flex items-center justify-center flex-shrink-0">
+        <div className="flex items-center justify-center flex-1">
           {user?.role === 'user' && (
             <TabNavigation />
           )}
           {user?.role === 'admin' && (
-            <div className="flex items-center gap-0.5 md:gap-1">
+            <div className="flex items-center gap-0.5 md:gap-1 scale-[0.85] md:scale-100">
               <Link
-                className={`btn text-[10px] md:text-xs px-1 md:px-2 py-0.5 ${pathname === '/' ? 'btn-primary' : 'btn-ghost'}`}
+                className={`btn text-[8px] md:text-xs px-1 md:px-2 py-0 shadow-none md:shadow ${pathname === '/' ? 'btn-primary' : 'btn-ghost'} transform-none`}
                 href="/"
               >
-                📋 Ana Liste
+                <span className="hidden md:inline">📋 </span>Ana Liste
               </Link>
-              <span className="text-slate-400 text-[10px] md:text-xs">/</span>
+              <span className="text-slate-400 text-[8px] md:text-xs">/</span>
               <Link
-                className={`btn text-[10px] md:text-xs px-1 md:px-2 py-0.5 ${pathname === '/admin' ? 'btn-primary' : 'btn-ghost'}`}
+                className={`btn text-[8px] md:text-xs px-1 md:px-2 py-0 shadow-none md:shadow ${pathname === '/admin' ? 'btn-primary' : 'btn-ghost'} transform-none`}
                 href="/admin"
               >
-                👑 Panelim
+                <span className="hidden md:inline">👑 </span>Panelim
               </Link>
             </div>
           )}
