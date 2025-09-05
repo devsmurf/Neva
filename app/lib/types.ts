@@ -30,4 +30,5 @@ export type Task = {
   notes?: string | null
   dependent_company_id?: string | null
   company?: Company
+  dependent_company?: Company
 }

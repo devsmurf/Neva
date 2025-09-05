@@ -16,7 +16,19 @@ export const daysDiff = (from: Date, to: Date) => {
 
 export const isLate = (t: Task) => !t.is_completed && todayStart().getTime() > startOfDayLocal(parseDateLocalNoon(t.due_date)).getTime()
 
-export const durumText = (t: Task) => (isLate(t) ? 'Geç Kaldı' : (t.status === 'in_progress' ? 'Devam Ediyor' : 'Planlandı'))
+export const durumText = (t: Task) => {
+  if (isLate(t)) return 'Geç Kaldı'
+  if (t.status === 'in_progress') return 'Devam Ediyor'
+  if (t.status === 'completed') return 'Tamamlandı'
+  
+  // Planned durumu için bağımlılık kontrolü
+  if (t.status === 'planned') {
+    // Bağımlılığı varsa "Planlandı", yoksa "Devam Ediyor" (otomatik başlamış)
+    return t.dependent_company_id ? 'Planlandı' : 'Devam Ediyor'
+  }
+  
+  return 'Planlandı' // fallback
+}
 
 export const daysLeft = (t: Task) => {
   const d = daysDiff(todayStart(), parseDateLocalNoon(t.due_date))
@@ -31,9 +43,13 @@ export const kalanGecikme = (t: Task) => {
 
 export const uyariText = (t: Task) => {
   if (isLate(t)) return 'Kendi işi gecikti'
-  const today = todayStart()
-  const s = startOfDayLocal(parseDateLocalNoon(t.start_date))
-  if (t.status === 'planned' && today.getTime() < s.getTime()) return 'Bağımlılığı beklemede'
+  
+  // Sadece bağımlılığı olan görevlerde uyarı göster
+  if (t.dependent_company_id && t.status === 'planned') {
+    return 'Bağımlılığı beklemede'
+  }
+  
+  // Diğer tüm durumlar için "—" göster (bağımlılık yok, completed, in_progress vs.)
   return '—'
 }
 

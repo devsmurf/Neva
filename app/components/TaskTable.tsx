@@ -2,7 +2,6 @@
 import { clsx } from 'clsx'
 import type { Task } from '@/lib/types'
 import { durumText, isLate, kalanGecikme, uyariText, parseDateLocalNoon } from '@/lib/date'
-import { companies } from '@/lib/mock'
 import { useEffect, useState } from 'react'
 
 type Props = {
@@ -53,16 +52,16 @@ export default function TaskTable({ rows, currentCompanyId, onComplete, onEdit, 
         <table className={clsx('table table-compact', narrow && 'table-narrow')}>
           <thead>
             <tr className="bg-slate-50">
-              <th className="th w-40 cmp md:sticky md:left-0 md:z-20 md:bg-slate-50">Şirket</th>
-              <th className="th w-20 blk">Blok</th>
-              <th className="th w-16 kat">Kat</th>
-              <th className="th">Görev</th>
-              <th className="th">Başlangıç</th>
-              <th className="th">Bitiş</th>
-              <th className="th">Durum</th>
-              <th className="th">Kalan/Gecikme</th>
-              <th className="th">Uyarı</th>
-              {showActionsCol && <th className="th">İşlemler</th>}
+              <th className="th w-40 md:w-24 cmp md:sticky md:left-0 md:z-20 md:bg-slate-50">Şirket</th>
+              <th className="th w-20 md:w-16 blk">Blok</th>
+              <th className="th w-16 md:w-10 kat">Kat</th>
+              <th className="th md:w-auto md:max-w-48">Görev</th>
+              <th className="th md:w-20">Başlama</th>
+              <th className="th md:w-20">Bitiş</th>
+              <th className="th md:w-16">Durum</th>
+              <th className="th md:w-20">Kalan</th>
+              <th className="th md:w-24">Uyarı</th>
+              {showActionsCol && <th className="th md:w-16">İşlem</th>}
             </tr>
           </thead>
           <tbody>
@@ -80,14 +79,16 @@ export default function TaskTable({ rows, currentCompanyId, onComplete, onEdit, 
                     'border-b border-slate-100'
                   )}
                 >
-                  <td className="td w-40 font-semibold text-blue-600 cmp md:sticky md:left-0 md:z-10 md:bg-inherit">{t.company?.name}</td>
-                  <td className="td w-20 font-medium blk">{formatBlock(t.block)}</td>
-                  <td className="td w-16 kat">{t.floor_from != null && t.floor_to != null ? `${formatFloor(t.floor_from)}–${formatFloor(t.floor_to)}` : (t.floor != null ? `${formatFloor(t.floor)}` : '—')}</td>
-                  <td className="td">{t.title}</td>
-                  <td className="td tabular-nums">{t.start_date}</td>
-                  <td className="td tabular-nums">{t.due_date}</td>
-                  <td className="td">{durumText(t)}</td>
-                  <td className="td">{kalanGecikme(t)}</td>
+                  <td className="td w-40 md:w-24 font-semibold text-blue-600 cmp md:sticky md:left-0 md:z-10 md:bg-inherit" title={t.company?.name}>{t.company?.name}</td>
+                  <td className="td w-20 md:w-16 font-medium blk">{formatBlock(t.block)}</td>
+                  <td className="td w-16 md:w-10 kat">{t.floor_from != null && t.floor_to != null ? `${formatFloor(t.floor_from)}–${formatFloor(t.floor_to)}` : (t.floor != null ? `${formatFloor(t.floor)}` : '—')}</td>
+                  <td className="td md:w-auto md:max-w-48" title={t.title}>
+                    <div className="truncate">{t.title}</div>
+                  </td>
+                  <td className="td md:w-20 tabular-nums text-xs">{t.start_date.split('-').reverse().join('/')}</td>
+                  <td className="td md:w-20 tabular-nums text-xs">{t.due_date.split('-').reverse().join('/')}</td>
+                  <td className="td md:w-16 text-xs">{durumText(t)}</td>
+                  <td className="td md:w-20 text-xs">{kalanGecikme(t)}</td>
                   <td className="td">
                     {t.dependent_company_id && warning === 'Bağımlılığı beklemede' ? (
                       <div className="relative inline-flex items-center gap-1" data-dep-container={t.id}>
@@ -110,7 +111,7 @@ export default function TaskTable({ rows, currentCompanyId, onComplete, onEdit, 
                               <div className="absolute -top-1 left-1/2 -translate-x-1/2 w-2 h-2 bg-white border-l border-t border-slate-200 rotate-45"></div>
                               <div className="text-[11px] text-slate-500 text-center">Bağımlı Olduğu</div>
                               <div className="text-sm font-semibold text-slate-800 text-center">
-                                {companies.find(c => c.id === t.dependent_company_id)?.name || '—'}
+                                {t.dependent_company?.name || 'Yükleniyor...'}
                               </div>
                             </div>
                           </div>
@@ -121,7 +122,7 @@ export default function TaskTable({ rows, currentCompanyId, onComplete, onEdit, 
                     )}
                   </td>
                   {showActionsCol && (
-                    <td className="td">
+                    <td className="td md:w-16">
                       {showDeleteButton ? (
                         // Admin paneli - silme butonu
                         <div className="flex items-center justify-center">

@@ -1,9 +1,9 @@
 "use client"
 import { useEffect, useMemo, useState } from 'react'
+import { project } from '@/lib/mock'
 import TaskTable from '@/components/TaskTable'
 import { parseDateLocalNoon, daysDiff } from '@/lib/date'
 import { useSession } from '@/components/SessionProvider'
-import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 
 // Types
@@ -16,8 +16,6 @@ interface Task {
   id: string
   company_id: string
   company?: Company
-  dependent_company_id?: string
-  dependent_company?: Company
   title: string
   block: string
   floor?: number
@@ -135,18 +133,6 @@ function ApprovalQueue({ queue, onApprove, onReject }: {
                   <span className="ml-2 font-medium">{task.status === 'planned' ? 'Planlandı' : 'Devam Ediyor'}</span>
                 </div>
               </div>
-
-              {/* Bağımlılık bilgisi */}
-              <div className="mt-3 pt-3 border-t border-slate-100">
-                <div className="text-xs md:text-sm">
-                  <span className="text-slate-500">Bağımlılık:</span>
-                  <span className="ml-2 font-medium">
-                    {task.dependent_company_id && task.dependent_company?.name
-                      ? `🔗 ${task.dependent_company.name}`
-                      : '❌ Yok'}
-                  </span>
-                </div>
-              </div>
             </div>
 
             <div className="flex gap-2 md:ml-4 md:self-start mt-2 md:mt-0">
@@ -175,8 +161,7 @@ function ApprovalQueue({ queue, onApprove, onReject }: {
 }
 
 export default function AdminPage() {
-  const { user, loading: sessionLoading } = useSession()
-  const router = useRouter()
+  const { user } = useSession()
   const [tab, setTab] = useState<Tab>('queue')
   const [selectedBlock, setSelectedBlock] = useState('')
   const [selectedCompany, setSelectedCompany] = useState('')
@@ -189,7 +174,6 @@ export default function AdminPage() {
   const [companies, setCompanies] = useState<Company[]>([])
   const [loading, setLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
-  const [project, setProject] = useState<any>(null)
 
   // Popup states
   const [showSuccessPopup, setShowSuccessPopup] = useState(false)
@@ -197,49 +181,19 @@ export default function AdminPage() {
   const [showErrorPopup, setShowErrorPopup] = useState(false)
   const [errorMessage, setErrorMessage] = useState('')
 
-  // Authentication check
+  // Load data from API
   useEffect(() => {
-    console.log('🔐 Admin auth check:', { sessionLoading, user: user?.role })
+    if (!user || user.role !== 'admin') return
 
-    if (sessionLoading) return // Wait for session to load
-
-    if (!user || user.role !== 'admin') {
-      console.log('❌ Not authorized, redirecting to admin login')
-      router.push('/admin/login')
-      return
-    }
-  }, [user, sessionLoading, router])
-
-  // Show loading during session check
-  if (sessionLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <div className="w-8 h-8 border-2 border-orange-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-slate-600">Yükleniyor...</p>
-        </div>
-      </div>
-    )
-  }
-
-  // Show nothing if not authorized (will redirect)
-  if (!user || user.role !== 'admin') {
-    return null
-  }
-
-  // Professional data loading - single execution with proper dependency management
-  const [dataLoaded, setDataLoaded] = useState(false)
-
-  useEffect(() => {
-    // Only load data once when user is confirmed admin and data not loaded yet
-    if (!user || user.role !== 'admin' || dataLoaded) return
-
-    const loadData = async () => {
+    const loadData = async (showRefresh = false) => {
       try {
-        setLoading(true)
-        console.log('🔄 Admin Panel: Initial data load')
+        if (showRefresh) {
+          setRefreshing(true)
+        } else {
+          setLoading(true)
+        }
 
-        // Load tasks, companies, and projects
+        // Load tasks and companies
         const [tasksResponse, companiesResponse] = await Promise.all([
           fetch('/api/tasks'),
           fetch('/api/companies')
@@ -247,8 +201,8 @@ export default function AdminPage() {
 
         if (tasksResponse.ok) {
           const tasksData = await tasksResponse.json()
-          console.log('✅ Admin Panel: Loaded', tasksData.length, 'tasks')
-          console.log('📋 Pending tasks:', tasksData.filter(t => !t.is_approved).length)
+          console.log('Admin Panel: Loaded tasks:', tasksData.length)
+          console.log('Admin Panel: Pending tasks:', tasksData.filter(t => !t.is_approved).length)
           setTasks(tasksData)
         }
 
@@ -256,25 +210,21 @@ export default function AdminPage() {
           const companiesData = await companiesResponse.json()
           setCompanies(companiesData)
         }
-
-        // Set default project info
-        setProject({
-          id: 'neva-yali',
-          name: 'Neva Yalı',
-          end_date: '2025-12-29',
-          is_active: true
-        })
-
-        setDataLoaded(true) // Mark as loaded to prevent re-execution
       } catch (error) {
-        console.error('❌ Error loading admin data:', error)
+        console.error('Error loading data:', error)
       } finally {
         setLoading(false)
+        setRefreshing(false)
       }
     }
 
     loadData()
-  }, [user?.role, dataLoaded]) // Depend on role and loaded state
+
+    // Auto-refresh every 30 seconds to catch new tasks (less aggressive)
+    const interval = setInterval(loadData, 30000)
+
+    return () => clearInterval(interval)
+  }, [user])
 
   // Read locally completed ids (mock) so completed tab shows updates
   useEffect(() => {
@@ -392,39 +342,29 @@ export default function AdminPage() {
 
   // Görev silme fonksiyonu
   const handleDeleteTask = async (id: string) => {
-    console.log('🗑️ Delete task called with ID:', id)
-
     if (!confirm('Bu görevi kalici olarak silmek istediğinizden emin misiniz?')) {
-      console.log('❌ Delete cancelled by user')
       return
     }
 
     try {
-      console.log('🚀 Sending DELETE request to /api/tasks/' + id)
       const response = await fetch(`/api/tasks/${id}`, {
         method: 'DELETE'
       })
 
-      console.log('📡 DELETE response status:', response.status)
-
       if (response.ok) {
-        console.log('✅ Task deleted successfully')
         // Refresh data from server
         const tasksResponse = await fetch('/api/tasks')
         if (tasksResponse.ok) {
           const tasksData = await tasksResponse.json()
-          console.log('📊 Refreshed tasks:', tasksData.length, 'tasks')
           setTasks(tasksData)
         }
-        showSuccess('🗑️ Görev başarıyla silindi!')
+        alert('Görev başarıyla silindi!')
       } else {
-        const errorData = await response.json()
-        console.error('❌ Delete failed:', response.status, errorData)
-        showError(`❌ Görev silinemedi: ${errorData.error || 'Bilinmeyen hata'}`)
+        alert('Görev silinemedi. Lütfen tekrar deneyin.')
       }
     } catch (error) {
-      console.error('💥 Delete error:', error)
-      showError('❌ Bir hata oluştu. Lütfen tekrar deneyin.')
+      console.error('Delete error:', error)
+      alert('Bir hata oluştu. Lütfen tekrar deneyin.')
     }
   }
 
@@ -760,7 +700,7 @@ export default function AdminPage() {
           <div className="bg-slate-50 rounded-lg p-4">
             <div className="text-slate-700 mb-4">
               <span className="text-sm text-slate-500">Proje Adı:</span>
-              <div className="text-xl font-bold">{project?.name || 'Yükleniyor...'}</div>
+              <div className="text-xl font-bold">{project.name}</div>
             </div>
 
             <div className="flex items-end gap-3">
@@ -771,7 +711,7 @@ export default function AdminPage() {
                 <input
                   type="date"
                   className="rounded-xl border border-slate-300 px-4 py-2 focus:ring-2 focus:ring-red-500/50"
-                  defaultValue={project?.end_date || '2025-12-29'}
+                  defaultValue={project.end_date}
                 />
               </div>
               <button className="btn btn-primary">📅 Tarihi Güncelle</button>

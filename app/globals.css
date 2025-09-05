@@ -2,6 +2,21 @@
 @tailwind components;
 @tailwind utilities;
 
+@keyframes slide-in {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+.animate-slide-in {
+  animation: slide-in 0.3s ease-out;
+}
+
 :root {
   --bg: 245 245 247;
 }
@@ -34,13 +49,22 @@ body {
 }
 
 .table-wrap { 
-  @apply overflow-x-auto w-full; 
+  @apply w-full; 
   scroll-behavior: smooth;
   scrollbar-width: thin;
   scrollbar-color: #cbd5e1 #f1f5f9;
   overflow-y: hidden;
   -webkit-overflow-scrolling: touch;
   overscroll-behavior-x: contain;
+  
+  /* Mobile'da scroll, desktop'ta no scroll */
+  overflow-x: auto;
+}
+
+@media (min-width: 768px) {
+  .table-wrap {
+    overflow-x: visible;
+  }
 }
 .table-wrap::-webkit-scrollbar {
   height: 8px;
@@ -56,10 +80,20 @@ body {
 .table-wrap::-webkit-scrollbar-thumb:hover {
   background: #94a3b8;
 }
-.table { @apply min-w-[900px] w-full text-sm; }
-/* Header cells centered, data cells left-aligned */
-.th { @apply px-2 md:px-3 py-2 text-center whitespace-nowrap text-xs md:text-sm text-black; }
-.td { @apply px-2 md:px-3 py-2 text-left whitespace-nowrap text-xs md:text-sm; }
+.table { 
+  @apply w-full text-sm; 
+  /* Mobile'da scroll için min-width, desktop'ta auto */
+  min-width: 900px;
+}
+
+@media (min-width: 768px) {
+  .table {
+    min-width: auto;
+  }
+}
+/* Header cells centered, data cells centered */
+.th { @apply px-1 md:px-2 py-2 text-center whitespace-nowrap text-xs md:text-sm text-black; }
+.td { @apply px-1 md:px-2 py-2 text-center whitespace-nowrap text-xs md:text-sm; }
 /* Subtle vertical separators between columns (lighter grey) */
 .th, .td { border-left: 1px solid rgba(148,163,184,0.2); /* slate-400/20 */ }
 .th:first-child, .td:first-child { border-left: 0; }

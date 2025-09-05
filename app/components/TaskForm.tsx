@@ -1,7 +1,6 @@
 "use client"
-import { useMemo, useState } from 'react'
+import { useMemo, useState, useEffect } from 'react'
 import type { Task } from '@/lib/types'
-import { companies } from '@/lib/mock'
 
 type Props = {
   initial?: Partial<Task>
@@ -45,6 +44,29 @@ export default function TaskForm({ initial, onSubmit }: Props) {
   const [hasDependency, setHasDependency] = useState(false)
   const [dependentCompany, setDependentCompany] = useState('')
   const [useRange, setUseRange] = useState(false)
+
+  // API state
+  const [companies, setCompanies] = useState<any[]>([])
+  const [loadingCompanies, setLoadingCompanies] = useState(true)
+
+  // Load companies from API
+  useEffect(() => {
+    const loadCompanies = async () => {
+      try {
+        const response = await fetch('/api/companies')
+        if (response.ok) {
+          const data = await response.json()
+          setCompanies(data)
+        }
+      } catch (error) {
+        console.error('Error loading companies:', error)
+      } finally {
+        setLoadingCompanies(false)
+      }
+    }
+
+    loadCompanies()
+  }, [])
 
   const floors = useMemo(() => {
     const n = FLOOR_MAP[form.block || '']
@@ -91,7 +113,7 @@ export default function TaskForm({ initial, onSubmit }: Props) {
           Yeni Görev Oluştur
         </h3>
         <p className="text-sm text-slate-600 mt-1">
-          Görevinizi tanımlayın, admin onayından sonra ana listede görünecek
+          Görevinizi tanımlayın, REV Şeflerin onayından sonra ana listede görünecek
         </p>
       </div>
 
@@ -223,7 +245,7 @@ export default function TaskForm({ initial, onSubmit }: Props) {
             className="w-full rounded-xl border border-slate-300/60 bg-white/90 backdrop-blur-sm px-4 py-3 outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-400 transition-all duration-200"
             value={form.title || ''}
             onChange={e => setForm(f => ({ ...f, title: e.target.value }))}
-            placeholder="Örn: Şap dökümü - 3. kat"
+            placeholder="Örn: Şap dökümü"
           />
         </div>
 
@@ -253,22 +275,33 @@ export default function TaskForm({ initial, onSubmit }: Props) {
             </label>
 
             {hasDependency && (
-              <div className="ml-7 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-                <label className="block text-sm font-medium text-blue-800 mb-2">
-                  Hangi taşeronun işini bekliyorsunuz?
-                </label>
-                <select
-                  value={dependentCompany}
-                  onChange={(e) => setDependentCompany(e.target.value)}
-                  className="w-full rounded-lg border border-blue-300 px-3 py-2 focus:ring-2 focus:ring-blue-500/50"
-                >
-                  <option value="">Taşeron seçiniz...</option>
-                  {companies.map(company => (
-                    <option key={company.id} value={company.id}>
-                      {company.name}
-                    </option>
-                  ))}
-                </select>
+              <div className="ml-7 space-y-3">
+                <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                  <label className="block text-sm font-medium text-blue-800 mb-2">
+                    Hangi taşeronun işini bekliyorsunuz?
+                  </label>
+                  <select
+                    value={dependentCompany}
+                    onChange={(e) => setDependentCompany(e.target.value)}
+                    className="w-full rounded-lg border border-blue-300 px-3 py-2 focus:ring-2 focus:ring-blue-500/50"
+                  >
+                    <option value="">Taşeron seçiniz...</option>
+                    {companies.map(company => (
+                      <option key={company.id} value={company.id}>
+                        {company.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg">
+                  <div className="flex items-start gap-2">
+                    <span className="text-amber-600 text-sm">⚠️</span>
+                    <p className="text-sm text-amber-800 leading-relaxed">
+                      <strong>Önemli:</strong> Geç kalma toleransına düşmemeniz için bağımlılığınız bittiğinde işi hemen başlatın.
+                    </p>
+                  </div>
+                </div>
               </div>
             )}
           </div>

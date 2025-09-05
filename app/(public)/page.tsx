@@ -2,13 +2,12 @@
 import SearchBar from '@/components/SearchBar'
 import TaskTable from '@/components/TaskTable'
 import TaskForm from '@/components/TaskForm'
-import { tasks } from '@/lib/mock'
 import type { Task } from '@/lib/types'
 import { useEffect, useMemo, useState } from 'react'
 import { useSession } from '@/components/SessionProvider'
 import { useTabContext } from '@/components/NavBar'
+import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { companies } from '@/lib/mock'
 
 // Giriş yapmamış kullanıcılar için ana giriş seçenekleri
 function LoginSelection() {
@@ -75,9 +74,7 @@ function LoginSelection() {
 const BLOCKS = ['A Blok', 'B Blok', 'C Blok', 'D Blok', 'E Blok']
 
 // Giriş yapmış kullanıcılar için görev listesi
-function TaskList() {
-  const { user } = useSession()
-  const { activeTab } = user?.role === 'user' ? useTabContext() : { activeTab: 'all' as const }
+function TaskList({ user, activeTab }: { user: any, activeTab: 'all' | 'my' }) {
   const [query, setQuery] = useState('')
   const [onlyUrgentFirst, setOnlyUrgentFirst] = useState(true)
   const [showForm, setShowForm] = useState(false)
@@ -85,24 +82,77 @@ function TaskList() {
   const [selectedCompany, setSelectedCompany] = useState('')
   const [completedIds, setCompletedIds] = useState<string[]>([])
 
+  // API state
+  const [tasks, setTasks] = useState<Task[]>([])
+  const [companies, setCompanies] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+
+  // Load data from API
+  useEffect(() => {
+    const loadData = async () => {
+      try {
+        setLoading(true)
+        setError(null)
+
+        console.log(`🔄 Loading data for tab: ${activeTab}`)
+
+        // Load companies first (doesn't require auth)
+        const companiesResponse = await fetch('/api/companies')
+        if (companiesResponse.ok) {
+          const companiesData = await companiesResponse.json()
+          setCompanies(companiesData)
+        }
+
+        // Load tasks (requires auth)
+        if (user) {
+          const tasksUrl = activeTab === 'my'
+            ? '/api/tasks?my_tasks=true'
+            : '/api/tasks?approved_only=true'
+
+          const tasksResponse = await fetch(tasksUrl)
+          if (tasksResponse.ok) {
+            const tasksData = await tasksResponse.json()
+            console.log(`📊 Loaded ${tasksData.length} tasks for tab "${activeTab}":`, tasksData.map((t: any) => ({ id: t.id, title: t.title, approved: t.is_approved, dependent_company: t.dependent_company?.name })))
+            setTasks(tasksData)
+          } else if (tasksResponse.status === 401) {
+            setError('Giriş yapmanız gerekiyor')
+          } else {
+            setError('Görevler yüklenirken hata oluştu')
+          }
+        }
+      } catch (err) {
+        setError('Bağlantı hatası')
+        console.error('Data loading error:', err)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    // Only load if user exists and activeTab is stable
+    if (user && activeTab) {
+      loadData()
+    }
+  }, [user, activeTab])
+
   // Load locally completed task ids (mock persistence)
   useEffect(() => {
     try {
       const raw = localStorage.getItem('neva-completed')
       if (raw) setCompletedIds(JSON.parse(raw))
-    } catch {}
+    } catch { }
   }, [])
 
   // Ana liste: sadece onaylı ve tamamlanmamış
   const approvedActive = useMemo(
     () => tasks.filter(t => t.is_approved && !t.is_completed && !completedIds.includes(t.id)),
-    [completedIds]
+    [tasks, completedIds]
   )
 
   // Benim görevlerim: kendi şirketime ait tüm görevler (onaylı + onaysız)
   const myTasks = useMemo(
     () => tasks.filter(t => t.company_id === user?.company_id && !t.is_completed && !completedIds.includes(t.id)),
-    [user?.company_id, completedIds]
+    [tasks, user?.company_id, completedIds]
   )
 
   // Seçilen bloka göre şirketleri filtrele
@@ -112,40 +162,95 @@ function TaskList() {
       .filter(t => t.block === selectedBlock)
       .map(t => t.company_id)
     return companies.filter(c => companiesInBlock.includes(c.id))
-  }, [selectedBlock])
+  }, [selectedBlock, tasks, companies])
 
   // Görev durum güncelleme
-  const handleUpdateStatus = (id: string, status: 'planned' | 'in_progress') => {
-    // Gerçek uygulamada API çağrısı yapılacak
-    const statusText = status === 'planned' ? 'Planlandı' : 'Devam Ediyor'
-    alert(`Görev durumu güncellendi: ${statusText} (${id})`)
-    // Mock: Burada tasks array'ini güncelleyebiliriz
+  const handleUpdateStatus = async (id: string, status: 'planned' | 'in_progress') => {
+    try {
+      const response = await fetch(`/api/tasks/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status })
+      })
+
+      if (response.ok) {
+        // Refresh tasks after update
+        const tasksUrl = activeTab === 'my'
+          ? '/api/tasks?my_tasks=true'
+          : '/api/tasks?approved_only=true'
+
+        const tasksResponse = await fetch(tasksUrl)
+        if (tasksResponse.ok) {
+          const tasksData = await tasksResponse.json()
+          setTasks(tasksData)
+        }
+
+        const statusText = status === 'planned' ? 'Planlandı' : 'Devam Ediyor'
+        alert(`✅ Görev durumu güncellendi: ${statusText}`)
+      } else {
+        const errorData = await response.json()
+        alert(`❌ Hata: ${errorData.error || 'Durum güncellenemedi'}`)
+      }
+    } catch (error) {
+      console.error('Update status error:', error)
+      alert('❌ Bağlantı hatası')
+    }
   }
 
   // Görev düzenleme
   const handleEdit = (id: string) => {
-    // Gerçek uygulamada düzenleme modal'ı açılacak
-    alert(`Düzenleme modalı açılacak: ${id}`)
+    // TODO: Düzenleme modal'ı implement edilecek
+    alert(`🔧 Düzenleme özelliği çok yakında... Görev ID: ${id}`)
   }
 
   // Görev tamamlama
-  const handleComplete = (id: string) => {
+  const handleComplete = async (id: string) => {
     if (!confirm('Bu görevi tamamlandı olarak işaretlemek istediğinizden emin misiniz?')) return
-    // Mark as completed (ids)
-    setCompletedIds((prev) => {
-      if (prev.includes(id)) return prev
-      const next = [...prev, id]
-      try { localStorage.setItem('neva-completed', JSON.stringify(next)) } catch {}
-      return next
-    })
-    // Persist completion timestamp for admin panel (mock)
+
     try {
-      const raw = localStorage.getItem('neva-completed-at')
-      const map = raw ? JSON.parse(raw) as Record<string,string> : {}
-      map[id] = new Date().toISOString()
-      localStorage.setItem('neva-completed-at', JSON.stringify(map))
-    } catch {}
-    alert(`Görev tamamlandı: ${id}`)
+      const response = await fetch(`/api/tasks/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ is_completed: true })
+      })
+
+      if (response.ok) {
+        // Mark as completed locally for immediate UI update
+        setCompletedIds((prev) => {
+          if (prev.includes(id)) return prev
+          const next = [...prev, id]
+          try { localStorage.setItem('neva-completed', JSON.stringify(next)) } catch { }
+          return next
+        })
+
+        // Persist completion timestamp for admin panel
+        try {
+          const raw = localStorage.getItem('neva-completed-at')
+          const map = raw ? JSON.parse(raw) as Record<string, string> : {}
+          map[id] = new Date().toISOString()
+          localStorage.setItem('neva-completed-at', JSON.stringify(map))
+        } catch { }
+
+        // Refresh tasks from server
+        const tasksUrl = activeTab === 'my'
+          ? '/api/tasks?my_tasks=true'
+          : '/api/tasks?approved_only=true'
+
+        const tasksResponse = await fetch(tasksUrl)
+        if (tasksResponse.ok) {
+          const tasksData = await tasksResponse.json()
+          setTasks(tasksData)
+        }
+
+        alert(`✅ Görev tamamlandı!`)
+      } else {
+        const errorData = await response.json()
+        alert(`❌ Hata: ${errorData.error || 'Görev tamamlanamadı'}`)
+      }
+    } catch (error) {
+      console.error('Complete task error:', error)
+      alert('❌ Bağlantı hatası')
+    }
   }
 
   const filtered = useMemo(() => {
@@ -169,6 +274,34 @@ function TaskList() {
 
     return rows
   }, [approvedActive, myTasks, query, activeTab, selectedBlock, selectedCompany])
+
+  // Loading state
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-64">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600 mx-auto mb-2"></div>
+          <p className="text-slate-600">Görevler yükleniyor...</p>
+        </div>
+      </div>
+    )
+  }
+
+  // Error state
+  if (error) {
+    return (
+      <div className="text-center py-12">
+        <div className="text-red-600 mb-2">⚠️ Hata oluştu</div>
+        <p className="text-slate-600 mb-4">{error}</p>
+        <button
+          onClick={() => window.location.reload()}
+          className="btn btn-primary"
+        >
+          🔄 Tekrar Dene
+        </button>
+      </div>
+    )
+  }
 
   return (
     <div className="space-y-2">
@@ -268,10 +401,41 @@ function TaskList() {
       </div>
 
       {showForm && user && (
-        <TaskForm onSubmit={(payload) => {
-          // Placeholder: API entegrasyonu eklenecek (/api/tasks)
-          alert(`Taslak kaydedildi (mock). Firma: ${user.company_name}. Admin onayı bekleniyor.`)
-          setShowForm(false)
+        <TaskForm onSubmit={async (payload) => {
+          try {
+            const response = await fetch('/api/tasks', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                ...payload,
+                company_id: user?.company_id // Add user's company_id to payload
+              })
+            })
+
+            if (response.ok) {
+              const newTask = await response.json()
+              setShowForm(false)
+
+              // Refresh tasks to show the new one (if it's approved or in my tasks)
+              const tasksUrl = activeTab === 'my'
+                ? '/api/tasks?my_tasks=true'
+                : '/api/tasks?approved_only=true'
+
+              const tasksResponse = await fetch(tasksUrl)
+              if (tasksResponse.ok) {
+                const tasksData = await tasksResponse.json()
+                setTasks(tasksData)
+              }
+
+              alert(`✅ Görev başarıyla oluşturuldu! Admin onayı bekleniyor.\n📋 Görev: ${newTask.title}`)
+            } else {
+              const errorData = await response.json()
+              alert(`❌ Hata: ${errorData.error || 'Görev oluşturulamadı'}`)
+            }
+          } catch (error) {
+            console.error('Task creation error:', error)
+            alert('❌ Bağlantı hatası. Lütfen tekrar deneyin.')
+          }
         }} />
       )}
 
@@ -290,7 +454,23 @@ function TaskList() {
 }
 
 export default function HomePage() {
-  const { user } = useSession()
+  const { user, loading: sessionLoading } = useSession()
+
+  // Always call hooks at top level
+  const tabContext = useTabContext()
+  const activeTab = user?.role === 'user' ? tabContext.activeTab : 'all' as const
+
+  // Show loading during session check
+  if (sessionLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-8 h-8 border-2 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-slate-600">Yükleniyor...</p>
+        </div>
+      </div>
+    )
+  }
 
   // Eğer kullanıcı giriş yapmamışsa, giriş seçeneklerini göster
   if (!user) {
@@ -298,5 +478,5 @@ export default function HomePage() {
   }
 
   // Giriş yapmış kullanıcılara görev listesini göster
-  return <TaskList />
+  return <TaskList user={user} activeTab={activeTab} />
 }
