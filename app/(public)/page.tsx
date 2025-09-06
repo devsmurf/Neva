@@ -438,7 +438,7 @@ function TaskList({ user, activeTab }: { user: any, activeTab: 'all' | 'my' }) {
                 setTasks(tasksData)
               }
 
-              alert(`✅ Görev başarıyla oluşturuldu! Admin onayı bekleniyor.\n📋 Görev: ${newTask.title}`)
+              alert(`✅ Görev başarıyla oluşturuldu! Şef onayı bekleniyor.\n📋 Görev: ${newTask.title}`)
             } else {
               const errorData = await response.json()
               alert(`❌ Hata: ${errorData.error || 'Görev oluşturulamadı'}`)

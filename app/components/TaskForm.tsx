@@ -166,17 +166,20 @@ export default function TaskForm({ initial, onSubmit }: Props) {
           <label className="block text-sm font-medium text-slate-700 mb-2">
             🏗️ Blok Seçimi
           </label>
-          <select
-            required
-            className="w-full rounded-xl border border-slate-300/60 bg-white/90 backdrop-blur-sm px-4 py-3 outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-400 transition-all duration-200"
-            value={form.block || ''}
-            onChange={e => setForm(f => ({ ...f, block: e.target.value, floor: null, floor_from: null, floor_to: null }))}
-          >
-            <option value="">Blok seçiniz...</option>
-            {BLOCKS.map(block => (
-              <option key={block} value={block}>{block}</option>
-            ))}
-          </select>
+          <div className="relative">
+            <select
+              required
+              className="select-modern w-full"
+              value={form.block || ''}
+              onChange={e => setForm(f => ({ ...f, block: e.target.value, floor: null, floor_from: null, floor_to: null }))}
+            >
+              <option value="">Blok seçiniz...</option>
+              {BLOCKS.map(block => (
+                <option key={block} value={block}>{block}</option>
+              ))}
+            </select>
+            <svg className="select-caret" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+          </div>
         </div>
 
         {/* Kat Seçimi */}
@@ -207,46 +210,55 @@ export default function TaskForm({ initial, onSubmit }: Props) {
             </div>
 
             {!useRange ? (
-              <select
-                required
-                className="w-full rounded-xl border border-slate-300/60 bg-white/90 backdrop-blur-sm px-4 py-3 outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-400 transition-all duration-200"
-                value={form.floor ?? ''}
-                onChange={(e) => setForm(f => ({ ...f, floor: Number(e.target.value) }))}
-              >
-                <option value="">Kat seçiniz...</option>
-                {floors.map(k => (
-                  <option key={k} value={k}>{formatFloor(k)}</option>
-                ))}
-              </select>
+              <div className="relative">
+                <select
+                  required
+                  className="select-modern w-full"
+                  value={form.floor ?? ''}
+                  onChange={(e) => setForm(f => ({ ...f, floor: Number(e.target.value) }))}
+                >
+                  <option value="">Kat seçiniz...</option>
+                  {floors.map(k => (
+                    <option key={k} value={k}>{formatFloor(k)}</option>
+                  ))}
+                </select>
+                <svg className="select-caret" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+              </div>
             ) : (
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="block text-xs text-slate-600 mb-1">Başlangıç katı</label>
-                  <select
-                    required
-                    className="w-full rounded-xl border border-slate-300/60 bg-white/90 backdrop-blur-sm px-3 py-2.5 outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-400 transition-all duration-200"
-                    value={form.floor_from ?? ''}
-                    onChange={(e) => setForm(f => ({ ...f, floor_from: Number(e.target.value) }))}
-                  >
-                    <option value="">Seçiniz</option>
-                    {floors.map(k => (
-                      <option key={k} value={k}>{formatFloor(k)}</option>
-                    ))}
-                  </select>
+                  <div className="relative">
+                    <select
+                      required
+                      className="select-modern w-full"
+                      value={form.floor_from ?? ''}
+                      onChange={(e) => setForm(f => ({ ...f, floor_from: Number(e.target.value) }))}
+                    >
+                      <option value="">Seçiniz</option>
+                      {floors.map(k => (
+                        <option key={k} value={k}>{formatFloor(k)}</option>
+                      ))}
+                    </select>
+                    <svg className="select-caret" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                  </div>
                 </div>
                 <div>
                   <label className="block text-xs text-slate-600 mb-1">Bitiş katı</label>
-                  <select
-                    required
-                    className="w-full rounded-xl border border-slate-300/60 bg-white/90 backdrop-blur-sm px-3 py-2.5 outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-400 transition-all duration-200"
-                    value={form.floor_to ?? ''}
-                    onChange={(e) => setForm(f => ({ ...f, floor_to: Number(e.target.value) }))}
-                  >
-                    <option value="">Seçiniz</option>
-                    {floors.map(k => (
-                      <option key={k} value={k}>{formatFloor(k)}</option>
-                    ))}
-                  </select>
+                  <div className="relative">
+                    <select
+                      required
+                      className="select-modern w-full"
+                      value={form.floor_to ?? ''}
+                      onChange={(e) => setForm(f => ({ ...f, floor_to: Number(e.target.value) }))}
+                    >
+                      <option value="">Seçiniz</option>
+                      {floors.map(k => (
+                        <option key={k} value={k}>{formatFloor(k)}</option>
+                      ))}
+                    </select>
+                    <svg className="select-caret" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                  </div>
                 </div>
               </div>
             )}
@@ -301,18 +313,21 @@ export default function TaskForm({ initial, onSubmit }: Props) {
                   <label className="block text-sm font-medium text-blue-800 mb-2">
                     Hangi taşeronun işini bekliyorsunuz?
                   </label>
-                  <select
-                    value={dependentCompany}
-                    onChange={(e) => setDependentCompany(e.target.value)}
-                    className="w-full rounded-lg border border-blue-300 px-3 py-2 focus:ring-2 focus:ring-blue-500/50"
-                  >
-                    <option value="">Taşeron seçiniz...</option>
-                    {companies.map(company => (
-                      <option key={company.id} value={company.id}>
-                        {company.name}
-                      </option>
-                    ))}
-                  </select>
+                  <div className="relative">
+                    <select
+                      value={dependentCompany}
+                      onChange={(e) => setDependentCompany(e.target.value)}
+                      className="select-modern w-full"
+                    >
+                      <option value="">Taşeron seçiniz...</option>
+                      {companies.map(company => (
+                        <option key={company.id} value={company.id}>
+                          {company.name}
+                        </option>
+                      ))}
+                    </select>
+                    <svg className="select-caret" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                  </div>
                 </div>
 
                 <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg">
@@ -426,7 +441,7 @@ export default function TaskForm({ initial, onSubmit }: Props) {
                 Onay Süreci Hakkında Bilgi
               </p>
               <p className="text-xs text-amber-700">
-                Kaydedilen görev admin onayına gönderilecek. Onaylandıktan sonra ana listede görünecek ve diğer ekipler tarafından görülebilecek.
+                Kaydedilen görev Şef onayına gönderilecek. Onaylandıktan sonra ana listede görünecek ve diğer ekipler tarafından görülebilecek.
               </p>
             </div>
           </div>
