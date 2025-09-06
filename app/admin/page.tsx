@@ -2,6 +2,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import TaskTable from '@/components/TaskTable'
 import { parseDateLocalNoon, daysDiff } from '@/lib/date'
+import { supabase } from '@/lib/supabaseClient'
 import { useSession } from '@/components/SupabaseSessionProvider'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
@@ -183,6 +184,8 @@ export default function AdminPage() {
   const [completedIds, setCompletedIds] = useState<string[]>([])
   const [completedAt, setCompletedAt] = useState<Record<string, string>>({})
   const [completedSeen, setCompletedSeen] = useState<number>(0)
+  const [sortMode, setSortMode] = useState<'default' | 'newest'>('default')
+  const [prioritizeLate, setPrioritizeLate] = useState<boolean>(true)
 
   // State for dynamic data
   const [tasks, setTasks] = useState<Task[]>([])
@@ -282,7 +285,14 @@ export default function AdminPage() {
   }, [])
 
   // Hook'ları koşullu return'den önce çağırıyoruz
-  const queue = useMemo(() => tasks.filter(t => !t.is_approved), [tasks])
+  const queue = useMemo(() => {
+    const arr = tasks.filter(t => !t.is_approved)
+    return arr.sort((a, b) => {
+      const ad = Date.parse((a as any).updated_at || (a as any).created_at || (a.due_date + 'T00:00:00'))
+      const bd = Date.parse((b as any).updated_at || (b as any).created_at || (b.due_date + 'T00:00:00'))
+      return bd - ad // newest first
+    })
+  }, [tasks])
   const all = useMemo(() => tasks, [tasks])
   const completed = useMemo(
     () => tasks.filter(t => t.is_completed || completedIds.includes(t.id)),
@@ -358,21 +368,54 @@ export default function AdminPage() {
   // Görev onaylama fonksiyonu
   const handleApprove = async (id: string) => {
     try {
+      const { data: { session } } = await supabase.auth.getSession()
+      const at = session?.access_token
       const response = await fetch(`/api/admin/approve/${id}`, {
         method: 'PATCH',
+        headers: at ? { 'Authorization': `Bearer ${at}` } : undefined,
         credentials: 'include'
       })
 
       if (response.ok) {
         // Refresh data from server
-        const tasksResponse = await fetch('/api/tasks', { credentials: 'include' })
+        const tasksResponse = await fetch('/api/tasks', {
+          credentials: 'include',
+          headers: at ? { 'Authorization': `Bearer ${at}` } : undefined
+        })
         if (tasksResponse.ok) {
           const tasksData = await tasksResponse.json()
           setTasks(tasksData)
         }
         showSuccess('✅ Görev başarıyla onaylandı!')
+      } else if (response.status === 401 && at && session?.refresh_token) {
+        // Try to sync cookies then retry once
+        await fetch('/api/auth/sync', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({ access_token: at, refresh_token: session.refresh_token })
+        })
+        const retry = await fetch(`/api/admin/approve/${id}`, {
+          method: 'PATCH',
+          headers: { 'Authorization': `Bearer ${at}` },
+          credentials: 'include'
+        })
+        if (retry.ok) {
+          const tasksResponse = await fetch('/api/tasks', {
+            credentials: 'include',
+            headers: { 'Authorization': `Bearer ${at}` }
+          })
+          if (tasksResponse.ok) {
+            const tasksData = await tasksResponse.json()
+            setTasks(tasksData)
+          }
+          showSuccess('✅ Görev başarıyla onaylandı!')
+        } else {
+          const errorData = await retry.json().catch(() => ({}))
+          showError(`❌ Görev onaylanamadı: ${errorData.error || 'Bilinmeyen hata'}`)
+        }
       } else {
-        const errorData = await response.json()
+        const errorData = await response.json().catch(() => ({}))
         showError(`❌ Görev onaylanamadı: ${errorData.error || 'Bilinmeyen hata'}`)
       }
     } catch (error) {
@@ -388,21 +431,53 @@ export default function AdminPage() {
     }
 
     try {
+      const { data: { session } } = await supabase.auth.getSession()
+      const at = session?.access_token
       const response = await fetch(`/api/admin/reject/${id}`, {
         method: 'DELETE',
+        headers: at ? { 'Authorization': `Bearer ${at}` } : undefined,
         credentials: 'include'
       })
 
       if (response.ok) {
         // Refresh data from server
-        const tasksResponse = await fetch('/api/tasks', { credentials: 'include' })
+        const tasksResponse = await fetch('/api/tasks', {
+          credentials: 'include',
+          headers: at ? { 'Authorization': `Bearer ${at}` } : undefined
+        })
         if (tasksResponse.ok) {
           const tasksData = await tasksResponse.json()
           setTasks(tasksData)
         }
         showSuccess('🗑️ Görev başarıyla reddedildi ve silindi!')
+      } else if (response.status === 401 && at && session?.refresh_token) {
+        await fetch('/api/auth/sync', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({ access_token: at, refresh_token: session.refresh_token })
+        })
+        const retry = await fetch(`/api/admin/reject/${id}`, {
+          method: 'DELETE',
+          headers: { 'Authorization': `Bearer ${at}` },
+          credentials: 'include'
+        })
+        if (retry.ok) {
+          const tasksResponse = await fetch('/api/tasks', {
+            credentials: 'include',
+            headers: { 'Authorization': `Bearer ${at}` }
+          })
+          if (tasksResponse.ok) {
+            const tasksData = await tasksResponse.json()
+            setTasks(tasksData)
+          }
+          showSuccess('🗑️ Görev başarıyla reddedildi ve silindi!')
+        } else {
+          const errorData = await retry.json().catch(() => ({}))
+          showError(`❌ Görev reddedilemedi: ${errorData.error || 'Bilinmeyen hata'}`)
+        }
       } else {
-        const errorData = await response.json()
+        const errorData = await response.json().catch(() => ({}))
         showError(`❌ Görev reddedilemedi: ${errorData.error || 'Bilinmeyen hata'}`)
       }
     } catch (error) {
@@ -421,9 +496,12 @@ export default function AdminPage() {
     }
 
     try {
-      console.log('🚀 Sending DELETE request to /api/tasks/' + id)
-      const response = await fetch(`/api/tasks/${id}`, {
+      const { data: { session } } = await supabase.auth.getSession()
+      const at = session?.access_token
+      console.log('🚀 Sending DELETE request to /api/admin/reject/' + id)
+      const response = await fetch(`/api/admin/reject/${id}`, {
         method: 'DELETE',
+        headers: at ? { 'Authorization': `Bearer ${at}` } : undefined,
         credentials: 'include'
       })
 
@@ -432,15 +510,45 @@ export default function AdminPage() {
       if (response.ok) {
         console.log('✅ Task deleted successfully')
         // Refresh data from server
-        const tasksResponse = await fetch('/api/tasks', { credentials: 'include' })
+        const tasksResponse = await fetch('/api/tasks', {
+          credentials: 'include',
+          headers: at ? { 'Authorization': `Bearer ${at}` } : undefined
+        })
         if (tasksResponse.ok) {
           const tasksData = await tasksResponse.json()
           console.log('📊 Refreshed tasks:', tasksData.length, 'tasks')
           setTasks(tasksData)
         }
         showSuccess('🗑️ Görev başarıyla silindi!')
+      } else if (response.status === 401 && at && session?.refresh_token) {
+        await fetch('/api/auth/sync', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({ access_token: at, refresh_token: session.refresh_token })
+        })
+        const retry = await fetch(`/api/admin/reject/${id}`, {
+          method: 'DELETE',
+          headers: { 'Authorization': `Bearer ${at}` },
+          credentials: 'include'
+        })
+        if (retry.ok) {
+          const tasksResponse = await fetch('/api/tasks', {
+            credentials: 'include',
+            headers: { 'Authorization': `Bearer ${at}` }
+          })
+          if (tasksResponse.ok) {
+            const tasksData = await tasksResponse.json()
+            setTasks(tasksData)
+          }
+          showSuccess('🗑️ Görev başarıyla silindi!')
+        } else {
+          const errorData = await retry.json().catch(() => ({}))
+          console.error('❌ Delete failed:', retry.status, errorData)
+          showError(`❌ Görev silinemedi: ${errorData.error || 'Bilinmeyen hata'}`)
+        }
       } else {
-        const errorData = await response.json()
+        const errorData = await response.json().catch(() => ({}))
         console.error('❌ Delete failed:', response.status, errorData)
         showError(`❌ Görev silinemedi: ${errorData.error || 'Bilinmeyen hata'}`)
       }
@@ -694,18 +802,35 @@ export default function AdminPage() {
 
           {/* Görev Listesi */}
           <div className="card p-0">
-            <div className="p-4 border-b border-slate-200">
-              <h2 className="text-lg font-semibold text-slate-800">Tüm Görevler</h2>
-              <p className="text-sm text-slate-600">
-                {filteredAll.length} görev görüntüleniyor
-                {(selectedBlock || selectedCompany) && ' (filtrelenmiş)'}
-              </p>
+            <div className="p-4 border-b border-slate-200 flex items-center justify-between gap-2 flex-wrap">
+              <div>
+                <h2 className="text-lg font-semibold text-slate-800">Tüm Görevler</h2>
+                <p className="text-sm text-slate-600">
+                  {filteredAll.length} görev görüntüleniyor
+                  {(selectedBlock || selectedCompany) && ' (filtrelenmiş)'}
+                </p>
+              </div>
+              <div className="flex items-center gap-2">
+                <label className="inline-flex items-center gap-2 text-sm text-slate-600">
+                  <input type="checkbox" className="accent-brand-600" checked={prioritizeLate} onChange={(e) => setPrioritizeLate(e.target.checked)} />
+                  Kırmızıları öne al
+                </label>
+                <button
+                  className={`text-xs px-2 py-1 rounded-md border ${sortMode === 'newest' ? 'bg-slate-800 text-white border-slate-800' : 'bg-white text-slate-700 border-slate-300'}`}
+                  onClick={() => setSortMode(m => m === 'newest' ? 'default' : 'newest')}
+                  title="En yeni görevlere göre sırala"
+                >
+                  ⏱️ En Yeni
+                </button>
+              </div>
             </div>
             <TaskTable
               rows={filteredAll}
               onEdit={(id) => alert('Şef düzenleme: ' + id)}
               onComplete={handleDeleteTask}
               showDeleteButton={true}
+              sortMode={sortMode}
+              prioritizeLate={prioritizeLate}
             />
           </div>
         </div>

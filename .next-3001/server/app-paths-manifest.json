@@ -1,7 +1,8 @@
 {
   "/(public)/page": "app/(public)/page.js",
-  "/api/auth/sync/route": "app/api/auth/sync/route.js",
-  "/api/tasks/route": "app/api/tasks/route.js",
   "/contractor/login/page": "app/contractor/login/page.js",
-  "/api/companies/route": "app/api/companies/route.js"
+  "/api/tasks/route": "app/api/tasks/route.js",
+  "/api/companies/route": "app/api/companies/route.js",
+  "/admin/login/page": "app/admin/login/page.js",
+  "/api/auth/sync/route": "app/api/auth/sync/route.js"
 }

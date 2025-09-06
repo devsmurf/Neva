@@ -93,7 +93,13 @@ export async function getSessionUser(request?: Request): Promise<SessionUser | n
       }
     )
 
-    const { data: { user }, error } = await supabaseServer.auth.getUser()
+    // Support Authorization: Bearer <token> header as a fallback to cookies
+    let bearer: string | undefined
+    if (request) {
+      const authHeader = request.headers.get('authorization') || request.headers.get('Authorization') || ''
+      if (authHeader.toLowerCase().startsWith('bearer ')) bearer = authHeader.slice(7)
+    }
+    const { data: { user }, error } = await supabaseServer.auth.getUser(bearer)
 
     if (error || !user) {
       console.log('❌ No authenticated user found (server-side):', error?.message)
