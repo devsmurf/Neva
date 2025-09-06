@@ -2,7 +2,7 @@
 import type { ReactNode } from 'react'
 import { useEffect, useRef, useState } from 'react'
 import NavBar, { TabProvider } from './NavBar'
-import { useSession } from './SessionProvider'
+import { useSession } from './SupabaseSessionProvider'
 import { usePathname } from 'next/navigation'
 
 // NavBar ile padding'i birlikte yöneten component  

@@ -1,7 +1,7 @@
 "use client"
 import Link from 'next/link'
 import { useState, useEffect } from 'react'
-import { useSession } from '@/components/SessionProvider'
+import { useSession } from '@/components/SupabaseSessionProvider'
 import { useRouter } from 'next/navigation'
 
 export default function AdminLoginPage() {
@@ -57,13 +57,13 @@ export default function AdminLoginPage() {
     }
 
     return (
-        <div className="h-screen w-screen flex items-center justify-center bg-white px-4 overflow-hidden fixed inset-0">
-            {/* Sol üst geri butonu */}
-            <Link href="/" className="absolute top-32 left-3 z-[9999] inline-flex items-center justify-center w-10 h-10 text-slate-700 hover:text-orange-600 text-lg transition-all duration-200 bg-white rounded-full shadow-lg border-2 border-slate-200 hover:border-orange-400 hover:shadow-xl">
-                <span>←</span>
-            </Link>
-
+        <div className="fixed inset-0 h-screen w-screen flex items-center justify-center bg-white px-4 pt-20 md:pt-24 overflow-hidden">
             <div className="w-full max-w-xs">
+                {/* Geri butonu - header altında, akışta */}
+                <Link href="/" className="inline-flex items-center justify-center w-10 h-10 text-slate-700 hover:text-orange-600 text-lg transition-all duration-200 bg-white rounded-full shadow-lg border-2 border-slate-200 hover:border-orange-400 hover:shadow-xl mb-3">
+                    <span>←</span>
+                </Link>
+
                 <div className="bg-white rounded-xl shadow-md border border-gray-200 p-4">
                     {/* Header */}
                     <div className="text-center mb-4">

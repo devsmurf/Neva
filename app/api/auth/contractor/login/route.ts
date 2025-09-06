@@ -4,25 +4,25 @@ import { verifyContractorLogin, createSession } from '@/lib/auth-helpers'
 export async function POST(request: Request) {
   try {
     const body = await request.json()
-    const { company_id, password } = body
+    const { email, password } = body
 
-    if (!company_id || !password) {
+    if (!email || !password) {
       return NextResponse.json(
-        { error: 'Company ID and password required' },
+        { error: 'Email and password required' },
         { status: 400 }
       )
     }
 
-    const result = await verifyContractorLogin(company_id, password)
+    const result = await verifyContractorLogin(email, password)
 
-    if (!result.success) {
+    if (!result.success || !result.user) {
       return NextResponse.json(
-        { error: result.error },
+        { error: result.error || 'Login failed' },
         { status: 401 }
       )
     }
 
-    // Create session
+    // Session created automatically by Supabase Auth
     createSession(result.user)
 
     return NextResponse.json({

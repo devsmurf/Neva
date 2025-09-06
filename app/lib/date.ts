@@ -17,9 +17,9 @@ export const daysDiff = (from: Date, to: Date) => {
 export const isLate = (t: Task) => !t.is_completed && todayStart().getTime() > startOfDayLocal(parseDateLocalNoon(t.due_date)).getTime()
 
 export const durumText = (t: Task) => {
+  if (t.is_completed) return 'Tamamlandı'
   if (isLate(t)) return 'Geç Kaldı'
   if (t.status === 'in_progress') return 'Devam Ediyor'
-  if (t.status === 'completed') return 'Tamamlandı'
   
   // Planned durumu için bağımlılık kontrolü
   if (t.status === 'planned') {

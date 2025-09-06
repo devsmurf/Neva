@@ -15,14 +15,14 @@ export async function POST(request: Request) {
 
     const result = await verifyAdminLogin(email, password)
 
-    if (!result.success) {
+    if (!result.success || !result.user) {
       return NextResponse.json(
-        { error: result.error },
+        { error: result.error || 'Login failed' },
         { status: 401 }
       )
     }
 
-    // Create session
+    // Session created automatically by Supabase Auth
     createSession(result.user)
 
     return NextResponse.json({

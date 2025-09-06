@@ -3,6 +3,7 @@ import { clsx } from 'clsx'
 import type { Task } from '@/lib/types'
 import { durumText, isLate, kalanGecikme, uyariText, parseDateLocalNoon } from '@/lib/date'
 import { useEffect, useState } from 'react'
+import { createPortal } from 'react-dom'
 
 type Props = {
   rows: Task[]
@@ -12,10 +13,16 @@ type Props = {
   onUpdateStatus?: (id: string, status: 'planned' | 'in_progress') => void
   showDeleteButton?: boolean
   narrow?: boolean
+  sortMode?: 'default' | 'newest'
+  prioritizeLate?: boolean
 }
 
-export default function TaskTable({ rows, currentCompanyId, onComplete, onEdit, onUpdateStatus, showDeleteButton, narrow }: Props) {
+export default function TaskTable({ rows, currentCompanyId, onComplete, onEdit, onUpdateStatus, showDeleteButton, narrow, sortMode = 'default', prioritizeLate = true }: Props) {
   const [openDependencyId, setOpenDependencyId] = useState<string | null>(null)
+  const [popoverPos, setPopoverPos] = useState<{ id: string, x: number, y: number, above?: boolean } | null>(null)
+  const [anim, setAnim] = useState(false)
+  const [mounted, setMounted] = useState(false)
+  useEffect(() => setMounted(true), [])
 
   // Close dependency popover on outside click
   useEffect(() => {
@@ -26,18 +33,47 @@ export default function TaskTable({ rows, currentCompanyId, onComplete, onEdit, 
       const container = document.querySelector(`[data-dep-container="${openDependencyId}"]`)
       if (container && container.contains(target)) return
       setOpenDependencyId(null)
+      setPopoverPos(null)
+      setAnim(false)
     }
     document.addEventListener('click', onDocClick)
     return () => document.removeEventListener('click', onDocClick)
+  }, [openDependencyId])
+
+  // Close on scroll/resize to avoid misaligned popover
+  useEffect(() => {
+    if (!openDependencyId) return
+    const handler = () => {
+      setOpenDependencyId(null)
+      setPopoverPos(null)
+      setAnim(false)
+    }
+    window.addEventListener('scroll', handler, true)
+    window.addEventListener('resize', handler)
+    return () => {
+      window.removeEventListener('scroll', handler, true)
+      window.removeEventListener('resize', handler)
+    }
   }, [openDependencyId])
   const formatFloor = (k: number) => (k < 0 ? `B${Math.abs(k)}` : `${k}`)
   const formatBlock = (b: string) => b.replace(/\s*blok\s*$/i, '').trim()
   const showActionsCol = Boolean(showDeleteButton || onComplete || onEdit || onUpdateStatus)
   const sorted = [...rows].sort((a, b) => {
-    const la = isLate(a), lb = isLate(b)
-    if (la !== lb) return la ? -1 : 1 // kırmızılar en üstte
+    // Optional prioritization of late tasks (kırmızılar önde)
+    if (prioritizeLate) {
+      const la = isLate(a), lb = isLate(b)
+      if (la !== lb) return la ? -1 : 1
+    }
+
+    if (sortMode === 'newest') {
+      const ad = Date.parse((a as any).created_at || (a as any).updated_at || (a.due_date + 'T00:00:00'))
+      const bd = Date.parse((b as any).created_at || (b as any).updated_at || (b.due_date + 'T00:00:00'))
+      return bd - ad // newest first
+    }
+
+    // default: due date ascending, then company
     const da = +parseDateLocalNoon(a.due_date) - +parseDateLocalNoon(b.due_date)
-    if (da !== 0) return da // en acil önce
+    if (da !== 0) return da
     const ca = (a.company?.name || ''), cb = (b.company?.name || '')
     return ca.localeCompare(cb)
   })
@@ -100,22 +136,54 @@ export default function TaskTable({ rows, currentCompanyId, onComplete, onEdit, 
                           className="inline-flex items-center justify-center w-4 h-4 rounded-full bg-blue-600 text-white text-[10px] leading-4 shadow focus:outline-none focus:ring-2 focus:ring-blue-400"
                           onClick={(e) => {
                             e.stopPropagation()
-                            setOpenDependencyId(openDependencyId === t.id ? null : t.id)
+                            const nowOpen = openDependencyId !== t.id
+                            if (!nowOpen) {
+                              setOpenDependencyId(null)
+                              setPopoverPos(null)
+                              setAnim(false)
+                              return
+                            }
+                            setOpenDependencyId(t.id)
+                            // Anchor to the middle of the label+icon container
+                            const container = (e.currentTarget.parentElement as HTMLElement) || (e.currentTarget as HTMLElement)
+                            const rect = container.getBoundingClientRect()
+                            const x = rect.left + rect.width / 2
+                            const y = rect.bottom + 8 // Always open downward
+                            setPopoverPos({ id: t.id, x, y, above: false })
+                            setAnim(false)
+                            setTimeout(() => setAnim(true), 10)
                           }}
                         >
                           i
                         </button>
-                        {openDependencyId === t.id && (
-                          <div className="absolute left-1/2 -translate-x-1/2 top-full mt-2 z-50" onClick={(e) => e.stopPropagation()}>
-                            <div className="relative rounded-xl border border-slate-200 bg-white/95 backdrop-blur px-3 py-2 shadow-xl">
-                              <div className="absolute -top-1 left-1/2 -translate-x-1/2 w-2 h-2 bg-white border-l border-t border-slate-200 rotate-45"></div>
-                              <div className="text-[11px] text-slate-500 text-center">Bağımlı Olduğu</div>
-                              <div className="text-sm font-semibold text-slate-800 text-center">
-                                {t.dependent_company?.name || 'Yükleniyor...'}
+                        {mounted && openDependencyId === t.id && popoverPos?.id === t.id && createPortal(
+                          (
+                            <div
+                              className="fixed z-[9999]"
+                              style={{
+                                left: popoverPos.x,
+                                top: anim 
+                                  ? popoverPos.y 
+                                  : (popoverPos.above ? popoverPos.y + 8 : popoverPos.y - 8),
+                                transform: 'translateX(-50%)',
+                                opacity: anim ? 1 : 0,
+                                transition: 'top 150ms ease-out, opacity 150ms ease-out'
+                              }}
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              <div className="relative rounded-xl border border-slate-200 bg-white/95 backdrop-blur px-3 py-2 shadow-xl min-w-[220px] max-w-[85vw]">
+                                <div className={clsx(
+                                  'absolute left-1/2 -translate-x-1/2 w-2 h-2 bg-white border-slate-200 rotate-45',
+                                  popoverPos.above ? ' -bottom-1 border-t border-r' : ' -top-1 border-l border-t'
+                                )}></div>
+                                <div className="text-[11px] text-slate-500 text-center">Bağımlı Olduğu</div>
+                                <div className="text-sm font-semibold text-slate-800 text-center">
+                                  {t.dependent_company?.name || 'Yükleniyor...'}
+                                </div>
                               </div>
                             </div>
-                          </div>
-                        )}
+                          ), document.body)
+                        }
                       </div>
                     ) : (
                       <span>{warning}</span>

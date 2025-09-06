@@ -144,10 +144,21 @@ export default function TaskForm({ initial, onSubmit }: Props) {
             alert('Bitiş tarihi başlangıç tarihinden önce olamaz')
             return
           }
-          onSubmit?.({
+          // Normalize mutually exclusive floor fields for DB check constraint
+          const payload: Partial<Task> = {
             ...form,
             dependent_company_id: hasDependency && dependentCompany ? dependentCompany : null,
-          })
+          }
+          if (useRange) {
+            payload.floor = null
+            if (payload.floor_from != null) payload.floor_from = Number(payload.floor_from as any)
+            if (payload.floor_to != null) payload.floor_to = Number(payload.floor_to as any)
+          } else {
+            payload.floor_from = null
+            payload.floor_to = null
+            if (payload.floor != null) payload.floor = Number(payload.floor as any)
+          }
+          onSubmit?.(payload)
         }}
       >
         {/* Blok Seçimi */}
@@ -179,7 +190,17 @@ export default function TaskForm({ initial, onSubmit }: Props) {
                 <input
                   type="checkbox"
                   checked={useRange}
-                  onChange={(e) => setUseRange(e.target.checked)}
+                  onChange={(e) => {
+                    const checked = e.target.checked
+                    setUseRange(checked)
+                    // Clear opposite fields to satisfy DB constraint chk_floor_range
+                    setForm(f => ({
+                      ...f,
+                      floor: checked ? null : f.floor,
+                      floor_from: checked ? f.floor_from : null,
+                      floor_to: checked ? f.floor_to : null,
+                    }))
+                  }}
                 />
                 Kat aralığı seç
               </label>

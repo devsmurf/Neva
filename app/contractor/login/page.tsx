@@ -1,16 +1,15 @@
 "use client"
 import Link from 'next/link'
 import { useState, useEffect } from 'react'
-import { useSession } from '@/components/SessionProvider'
+import { useSession } from '@/components/SupabaseSessionProvider'
 import { useRouter } from 'next/navigation'
 
 export default function ContractorLoginPage() {
     const { loginContractor, user, loading: sessionLoading } = useSession()
-    const [selectedCompany, setSelectedCompany] = useState('')
+    const [email, setEmail] = useState('')
     const [password, setPassword] = useState('')
     const router = useRouter()
 
-    const [companies, setCompanies] = useState<any[]>([])
     const [error, setError] = useState('')
     const [loading, setLoading] = useState(false)
 
@@ -23,13 +22,7 @@ export default function ContractorLoginPage() {
         }
     }, [user, sessionLoading, router])
 
-    // Fetch companies
-    useEffect(() => {
-        fetch('/api/companies')
-            .then(res => res.json())
-            .then(data => setCompanies(data))
-            .catch(() => setError('Şirketler yüklenemedi'))
-    }, [])
+    // No longer need to fetch companies - using email login
 
     // Show loading during session check
     if (sessionLoading) {
@@ -49,33 +42,33 @@ export default function ContractorLoginPage() {
     }
 
     const handleSubmit = async () => {
-        if (!selectedCompany || !password) {
-            setError('Lütfen tüm alanları doldurun')
+        if (!email || !password) {
+            setError('Lütfen email ve şifrenizi girin')
             return
         }
 
         setLoading(true)
         setError('')
 
-        const success = await loginContractor(selectedCompany, password)
+        const success = await loginContractor(email, password)
 
         if (success) {
             router.push('/')
         } else {
-            setError('Hatalı şifre! Şirket şifresi doğru değil.')
+            setError('Hatalı email veya şifre!')
         }
 
         setLoading(false)
     }
 
     return (
-        <div className="h-screen w-screen flex items-center justify-center bg-white px-4 overflow-hidden fixed inset-0">
-            {/* Sol üst geri butonu */}
-            <Link href="/" className="absolute top-32 left-3 z-[9999] inline-flex items-center justify-center w-10 h-10 text-slate-700 hover:text-green-600 text-lg transition-all duration-200 bg-white rounded-full shadow-lg border-2 border-slate-200 hover:border-green-400 hover:shadow-xl">
-                <span>←</span>
-            </Link>
-
+        <div className="fixed inset-0 h-screen w-screen flex items-center justify-center bg-white px-4 pt-20 md:pt-24 overflow-hidden">
             <div className="w-full max-w-xs">
+                {/* Geri butonu - header altında, akışta */}
+                <Link href="/" className="inline-flex items-center justify-center w-10 h-10 text-slate-700 hover:text-green-600 text-lg transition-all duration-200 bg-white rounded-full shadow-lg border-2 border-slate-200 hover:border-green-400 hover:shadow-xl mb-3">
+                    <span>←</span>
+                </Link>
+
                 <div className="bg-white rounded-xl shadow-md border border-gray-200 p-4">
                     {/* Header */}
                     <div className="text-center mb-4">
@@ -86,40 +79,35 @@ export default function ContractorLoginPage() {
                             Taşeron Girişi
                         </h1>
                         <p className="text-slate-600 text-xs">
-                            Şirketinizi seçin ve giriş yapın
+                            Email ve şifrenizle giriş yapın
                         </p>
                     </div>
 
                     <div className="space-y-3">
                         <div>
                             <label className="block text-xs font-medium text-slate-700 mb-1">
-                                🏢 Şirket Seçin
+                                📧 Email Adresiniz
                             </label>
-                            <select
+                            <input
+                                type="email"
                                 className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-green-500/50 focus:border-green-400 transition-all duration-200"
-                                value={selectedCompany}
-                                onChange={(e) => setSelectedCompany(e.target.value)}
+                                value={email}
+                                onChange={(e) => setEmail(e.target.value)}
+                                placeholder="ornek@sirket.com"
                                 disabled={loading}
-                            >
-                                <option value="">Şirketinizi seçin...</option>
-                                {companies.map(company => (
-                                    <option key={company.id} value={company.id}>
-                                        {company.name}
-                                    </option>
-                                ))}
-                            </select>
+                            />
                         </div>
 
                         <div>
                             <label className="block text-xs font-medium text-slate-700 mb-1">
-                                🔐 Şirket Şifresi
+                                🔐 Şifreniz
                             </label>
                             <input
                                 type="password"
                                 className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-green-500/50 focus:border-green-400 transition-all duration-200"
                                 value={password}
                                 onChange={(e) => setPassword(e.target.value)}
-                                placeholder="Şirket şifrenizi girin"
+                                placeholder="Şifrenizi girin"
                                 disabled={loading}
                             />
 
@@ -130,7 +118,9 @@ export default function ContractorLoginPage() {
                             )}
                             <div className="mt-1 p-2 bg-green-50 rounded-lg border border-green-200">
                                 <p className="text-xs text-green-700">
-                                    💡 Varsayılan şifre: <code className="bg-green-100 px-1 py-0.5 rounded text-xs">123456</code>
+                                    💡 Test hesabı: <code className="bg-green-100 px-1 py-0.5 rounded text-xs">contractor@test.com</code>
+                                    <br />
+                                    🔑 Şifre: <code className="bg-green-100 px-1 py-0.5 rounded text-xs">ContractorTest123!</code>
                                 </p>
                             </div>
                         </div>
@@ -138,7 +128,7 @@ export default function ContractorLoginPage() {
                         <button
                             className="w-full bg-gradient-to-r from-green-500 to-emerald-500 text-white py-2.5 px-4 rounded-lg font-medium hover:from-green-600 hover:to-emerald-600 transition-all duration-200 shadow-md hover:shadow-lg mt-3 disabled:opacity-50"
                             onClick={handleSubmit}
-                            disabled={loading || !selectedCompany || !password}
+                            disabled={loading || !email || !password}
                         >
                             {loading ? '⏳ Giriş yapılıyor...' : '🚀 Taşeron Paneline Giriş'}
                         </button>

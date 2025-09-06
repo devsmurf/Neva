@@ -3,7 +3,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { project } from '@/lib/mock'
 import TaskTable from '@/components/TaskTable'
 import { parseDateLocalNoon, daysDiff } from '@/lib/date'
-import { useSession } from '@/components/SessionProvider'
+import { useSession } from '@/components/SupabaseSessionProvider'
 import Link from 'next/link'
 
 // Types

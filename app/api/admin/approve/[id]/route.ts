@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { supabaseAdmin } from '@/lib/supabaseClient'
+import { supabaseAdmin } from '@/lib/supabaseAdmin'
 import { getSessionUser } from '@/lib/auth-helpers'
 
 export async function PATCH(
@@ -8,7 +8,7 @@ export async function PATCH(
 ) {
   try {
     console.log('🔐 APPROVE REQUEST - Checking session...')
-    const user = await getSessionUser()
+    const user = await getSessionUser(request)
     
     if (!user) {
       console.log('❌ APPROVE FAILED: No user session')

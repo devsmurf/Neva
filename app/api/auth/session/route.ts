@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { getSessionUser } from '@/lib/auth-helpers'
+import { getSessionUser } from '@/lib/supabase-auth'
 
 export async function GET() {
   try {

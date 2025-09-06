@@ -4,7 +4,7 @@ import TaskTable from '@/components/TaskTable'
 import TaskForm from '@/components/TaskForm'
 import type { Task } from '@/lib/types'
 import { useEffect, useMemo, useState } from 'react'
-import { useSession } from '@/components/SessionProvider'
+import { useSession } from '@/components/SupabaseSessionProvider'
 import { useTabContext } from '@/components/NavBar'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
@@ -12,7 +12,7 @@ import Link from 'next/link'
 // Giriş yapmamış kullanıcılar için ana giriş seçenekleri
 function LoginSelection() {
   return (
-    <div className="h-screen w-screen flex items-center justify-center bg-white px-4 overflow-hidden fixed inset-0">
+    <div className="fixed inset-0 h-screen w-screen flex items-center justify-center bg-white px-4 pt-20 md:pt-24 overflow-hidden">
       <div className="w-full max-w-xs mx-auto space-y-4">
         {/* Ana Başlık */}
         <div className="text-center space-y-4">
@@ -81,6 +81,7 @@ function TaskList({ user, activeTab }: { user: any, activeTab: 'all' | 'my' }) {
   const [selectedBlock, setSelectedBlock] = useState('')
   const [selectedCompany, setSelectedCompany] = useState('')
   const [completedIds, setCompletedIds] = useState<string[]>([])
+  const [sortMode, setSortMode] = useState<'default' | 'newest'>('default')
 
   // API state
   const [tasks, setTasks] = useState<Task[]>([])
@@ -98,7 +99,7 @@ function TaskList({ user, activeTab }: { user: any, activeTab: 'all' | 'my' }) {
         console.log(`🔄 Loading data for tab: ${activeTab}`)
 
         // Load companies first (doesn't require auth)
-        const companiesResponse = await fetch('/api/companies')
+        const companiesResponse = await fetch('/api/companies', { credentials: 'include' })
         if (companiesResponse.ok) {
           const companiesData = await companiesResponse.json()
           setCompanies(companiesData)
@@ -110,7 +111,7 @@ function TaskList({ user, activeTab }: { user: any, activeTab: 'all' | 'my' }) {
             ? '/api/tasks?my_tasks=true'
             : '/api/tasks?approved_only=true'
 
-          const tasksResponse = await fetch(tasksUrl)
+          const tasksResponse = await fetch(tasksUrl, { credentials: 'include' })
           if (tasksResponse.ok) {
             const tasksData = await tasksResponse.json()
             console.log(`📊 Loaded ${tasksData.length} tasks for tab "${activeTab}":`, tasksData.map((t: any) => ({ id: t.id, title: t.title, approved: t.is_approved, dependent_company: t.dependent_company?.name })))
@@ -170,7 +171,8 @@ function TaskList({ user, activeTab }: { user: any, activeTab: 'all' | 'my' }) {
       const response = await fetch(`/api/tasks/${id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ status })
+        body: JSON.stringify({ status }),
+        credentials: 'include'
       })
 
       if (response.ok) {
@@ -179,7 +181,7 @@ function TaskList({ user, activeTab }: { user: any, activeTab: 'all' | 'my' }) {
           ? '/api/tasks?my_tasks=true'
           : '/api/tasks?approved_only=true'
 
-        const tasksResponse = await fetch(tasksUrl)
+        const tasksResponse = await fetch(tasksUrl, { credentials: 'include' })
         if (tasksResponse.ok) {
           const tasksData = await tasksResponse.json()
           setTasks(tasksData)
@@ -211,7 +213,8 @@ function TaskList({ user, activeTab }: { user: any, activeTab: 'all' | 'my' }) {
       const response = await fetch(`/api/tasks/${id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ is_completed: true })
+        body: JSON.stringify({ is_completed: true }),
+        credentials: 'include'
       })
 
       if (response.ok) {
@@ -385,6 +388,13 @@ function TaskList({ user, activeTab }: { user: any, activeTab: 'all' | 'my' }) {
             <input type="checkbox" className="accent-brand-600" checked={onlyUrgentFirst} onChange={(e) => setOnlyUrgentFirst(e.target.checked)} />
             Kırmızıları öne al
           </label>
+          <button
+            className={`text-xs px-2 py-1 rounded-md border ${sortMode === 'newest' ? 'bg-slate-800 text-white border-slate-800' : 'bg-white text-slate-700 border-slate-300'}`}
+            onClick={() => setSortMode(m => m === 'newest' ? 'default' : 'newest')}
+            title="En yeni görevlere göre sırala"
+          >
+            ⏱️ En Yeni
+          </button>
           <span className="text-sm text-slate-500">
             {filtered.length} görev görüntüleniyor
             {(selectedBlock || selectedCompany || query) && ' (filtrelenmiş)'}
@@ -409,7 +419,8 @@ function TaskList({ user, activeTab }: { user: any, activeTab: 'all' | 'my' }) {
               body: JSON.stringify({
                 ...payload,
                 company_id: user?.company_id // Add user's company_id to payload
-              })
+              }),
+              credentials: 'include'
             })
 
             if (response.ok) {
@@ -421,7 +432,7 @@ function TaskList({ user, activeTab }: { user: any, activeTab: 'all' | 'my' }) {
                 ? '/api/tasks?my_tasks=true'
                 : '/api/tasks?approved_only=true'
 
-              const tasksResponse = await fetch(tasksUrl)
+              const tasksResponse = await fetch(tasksUrl, { credentials: 'include' })
               if (tasksResponse.ok) {
                 const tasksData = await tasksResponse.json()
                 setTasks(tasksData)
@@ -446,6 +457,8 @@ function TaskList({ user, activeTab }: { user: any, activeTab: 'all' | 'my' }) {
           onEdit={activeTab === 'my' ? handleEdit : undefined}
           onComplete={activeTab === 'my' ? handleComplete : undefined}
           onUpdateStatus={activeTab === 'my' ? handleUpdateStatus : undefined}
+          sortMode={sortMode}
+          prioritizeLate={onlyUrgentFirst}
           narrow
         />
       </div>

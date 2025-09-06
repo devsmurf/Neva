@@ -2,7 +2,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import TaskTable from '@/components/TaskTable'
 import { parseDateLocalNoon, daysDiff } from '@/lib/date'
-import { useSession } from '@/components/SessionProvider'
+import { useSession } from '@/components/SupabaseSessionProvider'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 
@@ -210,23 +210,6 @@ export default function AdminPage() {
     }
   }, [user, sessionLoading, router])
 
-  // Show loading during session check
-  if (sessionLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <div className="w-8 h-8 border-2 border-orange-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-slate-600">Yükleniyor...</p>
-        </div>
-      </div>
-    )
-  }
-
-  // Show nothing if not authorized (will redirect)
-  if (!user || user.role !== 'admin') {
-    return null
-  }
-
   // Professional data loading - single execution with proper dependency management
   const [dataLoaded, setDataLoaded] = useState(false)
 
@@ -307,6 +290,24 @@ export default function AdminPage() {
   )
   const unreadCompleted = Math.max(0, completed.length - completedSeen)
 
+  // Background auto-refresh for tasks (silent, no UI flicker)
+  useEffect(() => {
+    let interval: any
+    const tick = async () => {
+      try {
+        const tasksResponse = await fetch('/api/tasks', { credentials: 'include' })
+        if (tasksResponse.ok) {
+          const tasksData = await tasksResponse.json()
+          setTasks(tasksData)
+        }
+      } catch {}
+    }
+    if (user && user.role === 'admin') {
+      interval = setInterval(tick, 10000) // 10s
+    }
+    return () => interval && clearInterval(interval)
+  }, [user?.role])
+
   // When opening Completed tab, mark as seen
   useEffect(() => {
     if (tab === 'completed') {
@@ -336,16 +337,35 @@ export default function AdminPage() {
     return companies.filter(c => companiesInBlock.includes(c.id))
   }, [selectedBlock, tasks, companies])
 
+  // Now we can safely return conditionally without violating hooks order
+  // Show loading during session check
+  if (sessionLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-8 h-8 border-2 border-orange-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-slate-600">Yükleniyor...</p>
+        </div>
+      </div>
+    )
+  }
+
+  // Show nothing if not authorized (will redirect)
+  if (!user || user.role !== 'admin') {
+    return null
+  }
+
   // Görev onaylama fonksiyonu
   const handleApprove = async (id: string) => {
     try {
       const response = await fetch(`/api/admin/approve/${id}`, {
-        method: 'PATCH'
+        method: 'PATCH',
+        credentials: 'include'
       })
 
       if (response.ok) {
         // Refresh data from server
-        const tasksResponse = await fetch('/api/tasks')
+        const tasksResponse = await fetch('/api/tasks', { credentials: 'include' })
         if (tasksResponse.ok) {
           const tasksData = await tasksResponse.json()
           setTasks(tasksData)
@@ -369,12 +389,13 @@ export default function AdminPage() {
 
     try {
       const response = await fetch(`/api/admin/reject/${id}`, {
-        method: 'DELETE'
+        method: 'DELETE',
+        credentials: 'include'
       })
 
       if (response.ok) {
         // Refresh data from server
-        const tasksResponse = await fetch('/api/tasks')
+        const tasksResponse = await fetch('/api/tasks', { credentials: 'include' })
         if (tasksResponse.ok) {
           const tasksData = await tasksResponse.json()
           setTasks(tasksData)
@@ -402,7 +423,8 @@ export default function AdminPage() {
     try {
       console.log('🚀 Sending DELETE request to /api/tasks/' + id)
       const response = await fetch(`/api/tasks/${id}`, {
-        method: 'DELETE'
+        method: 'DELETE',
+        credentials: 'include'
       })
 
       console.log('📡 DELETE response status:', response.status)
@@ -410,7 +432,7 @@ export default function AdminPage() {
       if (response.ok) {
         console.log('✅ Task deleted successfully')
         // Refresh data from server
-        const tasksResponse = await fetch('/api/tasks')
+        const tasksResponse = await fetch('/api/tasks', { credentials: 'include' })
         if (tasksResponse.ok) {
           const tasksData = await tasksResponse.json()
           console.log('📊 Refreshed tasks:', tasksData.length, 'tasks')
@@ -704,14 +726,15 @@ export default function AdminPage() {
                     <th className="th w-20 blk">Blok</th>
                     <th className="th w-16 kat">Kat</th>
                     <th className="th">Görev</th>
-                    <th className="th">Bitiş</th>
+                    <th className="th">Planlanan Bitiş</th>
                     <th className="th">Tamamlanma</th>
-                    <th className="th">Bitirme Durumu</th>
+                    <th className="th">Tamamlama Durumu</th>
+                    <th className="th">Gün Farkı</th>
                   </tr>
                 </thead>
                 <tbody>
                   {completed.map(t => {
-                    const cAtIso = completedAt[t.id]
+                    const cAtIso = (t as any).updated_at || completedAt[t.id]
                     const due = parseDateLocalNoon(t.due_date)
                     const cAt = cAtIso ? new Date(cAtIso) : undefined
                     const delta = cAt ? daysDiff(cAt, due) : 0
@@ -739,6 +762,11 @@ export default function AdminPage() {
                           ) : (
                             <span className="inline-flex items-center px-2 py-1 rounded-lg bg-slate-100 text-slate-600 text-xs font-medium">—</span>
                           )}
+                        </td>
+                        <td className="td tabular-nums">
+                          {cAt ? (
+                            delta === 0 ? '0' : (delta > 0 ? `+${delta}` : `${delta}`)
+                          ) : '—'}
                         </td>
                       </tr>
                     )

@@ -1,5 +1,5 @@
 import { cookies } from 'next/headers'
-import { supabaseAdmin } from './supabaseClient'
+import { supabaseAdmin } from './supabaseAdmin'
 
 export type SessionUser = {
   id: string
@@ -12,120 +12,188 @@ export type SessionUser = {
 }
 
 /**
- * Get the current session user from HTTP-only cookie
+ * Get the current session user from Supabase Auth (Server-side for API routes)
  */
-export async function getSessionUser(): Promise<SessionUser | null> {
+export async function getSessionUser(request?: Request): Promise<SessionUser | null> {
   try {
-    const cookieStore = cookies()
-    const sessionToken = cookieStore.get('neva-session')?.value
-
-    if (!sessionToken) {
-      console.log('🔍 No session token found')
-      return null
-    }
-
-    // Decode the session token (simplified - in production use proper JWT)
-    const decoded = JSON.parse(Buffer.from(sessionToken, 'base64').toString())
+    // For API routes, we need to get cookies from headers
+    let cookieHeader = ''
     
-    // Check if token is expired
-    if (decoded.exp && Date.now() > decoded.exp) {
-      console.log('⏰ Session expired:', {
-        expiry: new Date(decoded.exp).toISOString(),
-        now: new Date().toISOString()
-      })
+    if (request) {
+      // API route context - get from request headers
+      cookieHeader = request.headers.get('cookie') || ''
+    } else {
+      // Server component context - use cookies() function
+      try {
+        const cookieStore = cookies()
+        const allCookies = cookieStore.getAll()
+        cookieHeader = allCookies.map(cookie => `${cookie.name}=${cookie.value}`).join('; ')
+      } catch (err) {
+        console.warn('Could not access cookies store:', err)
+        return null
+      }
+    }
+
+    console.log('🍪 Cookie header length:', cookieHeader.length > 0 ? 'Found' : 'Empty')
+
+    // Create server client with cookies
+    const { createServerClient } = await import('@supabase/ssr')
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
+    const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+    
+    // Parse cookies from header - better handling
+    const parseCookies = (cookieHeader: string) => {
+      const cookies: Record<string, string> = {}
+      if (cookieHeader) {
+        cookieHeader.split(';').forEach(cookie => {
+          const equalIndex = cookie.indexOf('=')
+          if (equalIndex > 0) {
+            const name = cookie.slice(0, equalIndex).trim()
+            const value = cookie.slice(equalIndex + 1).trim()
+            if (name && value) {
+              try {
+                cookies[name] = decodeURIComponent(value)
+              } catch (err) {
+                // If decoding fails, use raw value
+                cookies[name] = value
+              }
+            }
+          }
+        })
+      }
+      return cookies
+    }
+
+    const cookiesMap = parseCookies(cookieHeader)
+    console.log('🍪 Parsed cookies count:', Object.keys(cookiesMap).length)
+    
+    // Log Supabase auth cookies specifically
+    const authCookies = Object.keys(cookiesMap).filter(key => 
+      key.includes('supabase') || key.includes('auth')
+    )
+    console.log('🔐 Auth cookies found:', authCookies.length, authCookies)
+    
+    const supabaseServer = createServerClient(
+      supabaseUrl,
+      supabaseAnonKey,
+      {
+        cookies: {
+          get(name: string) {
+            return cookiesMap[name]
+          },
+          set(name: string, value: string, options: any) {
+            // Can't set cookies in API routes without response object
+            console.log('Setting cookie (server):', name)
+          },
+          remove(name: string, options: any) {
+            // Can't remove cookies in API routes without response object
+            console.log('Removing cookie (server):', name)
+          },
+        },
+      }
+    )
+
+    const { data: { user }, error } = await supabaseServer.auth.getUser()
+
+    if (error || !user) {
+      console.log('❌ No authenticated user found (server-side):', error?.message)
       return null
     }
 
-    console.log('✅ Valid session found:', {
-      role: decoded.role,
-      email: decoded.email,
-      expiresIn: Math.round((decoded.exp - Date.now()) / (1000 * 60)) + ' minutes'
-    })
+    console.log('✅ Server-side user found:', user.email)
+
+    // Get user profile from database
+    const { data: profile, error: profileError } = await supabaseAdmin
+      .from('profiles')
+      .select(`
+        *,
+        company:companies(*)
+      `)
+      .eq('id', user.id)
+      .single()
+
+    if (profileError) {
+      console.warn('⚠️ Profile not found for user:', user.id, profileError.message)
+      return {
+        id: user.id,
+        email: user.email || '',
+        name: user.email || '',
+        company_id: undefined,
+        company_name: undefined,
+        role: 'user'
+      }
+    }
+
+    console.log('✅ Profile found with role:', profile.role)
 
     return {
-      id: decoded.user_id,
-      email: decoded.email,
-      name: decoded.name,
-      company_id: decoded.company_id,
-      company_name: decoded.company_name,
-      role: decoded.role,
-      is_first_login: decoded.is_first_login
+      id: user.id,
+      email: user.email || '',
+      name: profile.name || user.email || '',
+      company_id: profile.company_id,
+      company_name: profile.company?.name,
+      role: profile.role || 'user'
     }
   } catch (error) {
-    console.error('❌ Session decode error:', error)
+    console.error('❌ Server-side session user error:', error)
     return null
   }
 }
 
 /**
- * Create a session token and set HTTP-only cookie
+ * Create a session (handled by Supabase Auth automatically)
  */
-export function createSession(user: SessionUser): string {
-  const sessionToken = Buffer.from(JSON.stringify({
-    user_id: user.id,
-    email: user.email,
-    name: user.name,
-    company_id: user.company_id,
-    company_name: user.company_name,
-    role: user.role,
-    is_first_login: user.is_first_login,
-    exp: Date.now() + (7 * 24 * 60 * 60 * 1000) // 7 days for development
-  })).toString('base64')
-
-  const cookieStore = cookies()
-  cookieStore.set('neva-session', sessionToken, {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
-    sameSite: 'lax',
-    maxAge: 7 * 24 * 60 * 60, // 7 days for development
-    path: '/'
-  })
-
-  return sessionToken
+export function createSession(user: SessionUser): void {
+  // Supabase Auth handles session creation automatically
+  console.log('✅ Session created for user:', user.email)
 }
 
 /**
- * Clear the session cookie
+ * Clear the session (use Supabase signOut)
  */
 export function clearSession(): void {
-  const cookieStore = cookies()
-  cookieStore.delete('neva-session')
+  // Session clearing handled by Supabase Auth
+  console.log('🚪 Session cleared')
 }
 
 /**
- * Verify contractor credentials and get company info
+ * Verify contractor credentials using Supabase Auth
  */
-export async function verifyContractorLogin(company_id: string, password: string) {
+export async function verifyContractorLogin(email: string, password: string) {
   try {
-    // Verify company password
-    const { data: isValid, error: verifyError } = await supabaseAdmin
-      .rpc('verify_company_password', {
-        company_uuid: company_id,
-        password_input: password
-      })
+    // Use Supabase Auth for login
+    const { data, error } = await supabaseAdmin.auth.signInWithPassword({
+      email,
+      password
+    })
 
-    if (verifyError || !isValid) {
+    if (error || !data.user) {
       return { success: false, error: 'Invalid credentials' }
     }
 
-    // Get company info
-    const { data: company, error: companyError } = await supabaseAdmin
-      .from('companies')
-      .select('*')
-      .eq('id', company_id)
+    // Get user profile
+    const { data: profile, error: profileError } = await supabaseAdmin
+      .from('profiles')
+      .select(`
+        *,
+        company:companies(*)
+      `)
+      .eq('id', data.user.id)
       .single()
 
-    if (companyError || !company) {
-      return { success: false, error: 'Company not found' }
+    if (profileError || !profile) {
+      return { success: false, error: 'Profile not found' }
     }
 
     return {
       success: true,
       user: {
-        id: `contractor-${company_id}`,
-        company_id,
-        company_name: company.name,
-        role: 'user' as const
+        id: data.user.id,
+        email: data.user.email,
+        name: profile.name,
+        company_id: profile.company_id,
+        company_name: profile.company?.name,
+        role: profile.role as 'user' | 'admin'
       }
     }
   } catch (error) {
@@ -135,40 +203,38 @@ export async function verifyContractorLogin(company_id: string, password: string
 }
 
 /**
- * Verify admin credentials and get admin info
+ * Verify admin credentials using Supabase Auth
  */
 export async function verifyAdminLogin(email: string, password: string) {
   try {
-    // Verify admin credentials
-    const { data: adminId, error: verifyError } = await supabaseAdmin
-      .rpc('verify_admin_credentials', {
-        email_input: email,
-        password_input: password
-      })
+    // Use Supabase Auth for login
+    const { data, error } = await supabaseAdmin.auth.signInWithPassword({
+      email,
+      password
+    })
 
-    if (verifyError || !adminId) {
+    if (error || !data.user) {
       return { success: false, error: 'Invalid credentials' }
     }
 
-    // Get admin user info
-    const { data: admin, error: adminError } = await supabaseAdmin
-      .from('admin_users')
+    // Get user profile
+    const { data: profile, error: profileError } = await supabaseAdmin
+      .from('profiles')
       .select('*')
-      .eq('id', adminId)
+      .eq('id', data.user.id)
       .single()
 
-    if (adminError || !admin) {
-      return { success: false, error: 'Admin not found' }
+    if (profileError || !profile || profile.role !== 'admin') {
+      return { success: false, error: 'Access denied' }
     }
 
     return {
       success: true,
       user: {
-        id: admin.id,
-        email: admin.email,
-        name: admin.name,
-        role: 'admin' as const,
-        is_first_login: admin.is_first_login
+        id: data.user.id,
+        email: data.user.email,
+        name: profile.name,
+        role: 'admin' as const
       }
     }
   } catch (error) {

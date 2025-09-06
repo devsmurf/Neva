@@ -1,21 +1,85 @@
 import { createClient } from '@supabase/supabase-js'
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || ''
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ''
+const supabaseServiceRole = process.env.SUPABASE_SERVICE_ROLE || ''
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey)
+// Validation for environment variables
+if (!supabaseUrl) {
+  console.warn('NEXT_PUBLIC_SUPABASE_URL is not set. Please check your environment variables.')
+}
 
-// Server-side client (admin operations)
-export const supabaseAdmin = createClient(
-  supabaseUrl,
-  process.env.SUPABASE_SERVICE_ROLE!,
-  {
-    auth: {
-      autoRefreshToken: false,
-      persistSession: false
-    }
+if (!supabaseAnonKey) {
+  console.warn('NEXT_PUBLIC_SUPABASE_ANON_KEY is not set. Please check your environment variables.')
+}
+
+// Singleton Supabase client instance to prevent multiple instances
+let _supabase: any = null
+
+// Create Supabase client with singleton pattern and enhanced multi-tab support
+function createSupabaseClient() {
+  if (_supabase) return _supabase
+  
+  if (!supabaseUrl || !supabaseAnonKey) {
+    console.error('Supabase configuration missing')
+    _supabase = createClient('https://placeholder.supabase.co', 'placeholder-key')
+  } else {
+    _supabase = createClient(supabaseUrl, supabaseAnonKey, {
+      auth: {
+        autoRefreshToken: true,
+        persistSession: true,
+        detectSessionInUrl: true,
+        // Enhanced storage options for better multi-tab support
+        storage: {
+          getItem: (key: string) => {
+            if (typeof window !== 'undefined') {
+              return window.localStorage.getItem(key)
+            }
+            return null
+          },
+          setItem: (key: string, value: string) => {
+            if (typeof window !== 'undefined') {
+              window.localStorage.setItem(key, value)
+              // Trigger storage event for cross-tab communication
+              window.dispatchEvent(new StorageEvent('storage', {
+                key,
+                newValue: value,
+                url: window.location.href
+              }))
+            }
+          },
+          removeItem: (key: string) => {
+            if (typeof window !== 'undefined') {
+              window.localStorage.removeItem(key)
+              // Trigger storage event for cross-tab communication
+              window.dispatchEvent(new StorageEvent('storage', {
+                key,
+                newValue: null,
+                url: window.location.href
+              }))
+            }
+          }
+        },
+        // Add global fetch configuration
+        global: {
+          fetch: (url: RequestInfo | URL, options: RequestInit = {}) => {
+            return fetch(url, {
+              ...options,
+              credentials: 'include', // Always include cookies
+              headers: {
+                ...options.headers,
+              }
+            })
+          }
+        }
+      }
+    })
   }
-)
+  
+  return _supabase
+}
+
+export const supabase = createSupabaseClient()
 
 // Database types (generate with: supabase gen types typescript)
 export type Database = {

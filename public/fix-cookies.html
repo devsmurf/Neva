@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cookie Fixer - NEVA YALI</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 600px;
+            margin: 50px auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 10px;
+        }
+        .container {
+            background: rgba(255,255,255,0.1);
+            padding: 30px;
+            border-radius: 10px;
+            backdrop-filter: blur(10px);
+        }
+        h1 {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .status {
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 5px;
+            font-weight: bold;
+        }
+        .success { background: rgba(76, 175, 80, 0.3); }
+        .warning { background: rgba(255, 193, 7, 0.3); }
+        .error { background: rgba(244, 67, 54, 0.3); }
+        button {
+            background: #4CAF50;
+            color: white;
+            padding: 15px 30px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 10px 5px;
+            transition: background 0.3s;
+        }
+        button:hover { background: #45a049; }
+        .danger { background: #f44336; }
+        .danger:hover { background: #da190b; }
+        .info { background: #2196F3; }
+        .info:hover { background: #0b7dda; }
+        #cookieList {
+            background: rgba(0,0,0,0.2);
+            padding: 15px;
+            border-radius: 5px;
+            margin: 15px 0;
+            font-family: monospace;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🍪 NEVA YALI Cookie Fixer</h1>
+        
+        <div id="status"></div>
+        
+        <div>
+            <h3>Mevcut Cookie'ler:</h3>
+            <div id="cookieList"></div>
+        </div>
+        
+        <div>
+            <button onclick="clearOldCookies()" class="danger">🧹 Eski Cookie'leri Temizle</button>
+            <button onclick="testLogin()" class="info">🔐 Login Test</button>
+            <button onclick="refreshPage()" class="success">🔄 Sayfayı Yenile</button>
+        </div>
+        
+        <div>
+            <button onclick="goToApp()" class="success">🚀 Uygulamaya Git</button>
+            <button onclick="goToAdmin()" class="info">👑 Admin Panel</button>
+        </div>
+    </div>
+
+    <script>
+        function showStatus(message, type = 'success') {
+            const statusDiv = document.getElementById('status');
+            statusDiv.innerHTML = `<div class="status ${type}">${message}</div>`;
+        }
+
+        function updateCookieList() {
+            const cookieList = document.getElementById('cookieList');
+            const cookies = document.cookie.split(';').filter(c => c.trim());
+            
+            if (cookies.length === 0) {
+                cookieList.innerHTML = '<em>Hiç cookie yok</em>';
+            } else {
+                cookieList.innerHTML = cookies.map(cookie => {
+                    const [name, value] = cookie.trim().split('=');
+                    const isOld = name === 'neva-session';
+                    const isSupabase = name.startsWith('sb-');
+                    const status = isOld ? ' ❌ (ESKİ)' : isSupabase ? ' ✅ (SUPABASE)' : ' ❓';
+                    return `<div>${name}${status}: ${value.substring(0, 30)}...</div>`;
+                }).join('');
+            }
+        }
+
+        function clearOldCookies() {
+            console.log('🧹 Clearing old session cookies...');
+            
+            // Clear old neva-session cookie
+            document.cookie = 'neva-session=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
+            
+            // Clear any other non-Supabase cookies
+            const cookies = document.cookie.split(';');
+            cookies.forEach(cookie => {
+                const [name] = cookie.trim().split('=');
+                if (name && !name.startsWith('sb-')) {
+                    console.log('🗑️ Clearing old cookie:', name);
+                    document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;`;
+                }
+            });
+            
+            showStatus('✅ Eski cookie\'ler temizlendi!', 'success');
+            updateCookieList();
+        }
+
+        async function testLogin() {
+            try {
+                showStatus('🔐 Login test ediliyor...', 'warning');
+                
+                const response = await fetch('/api/auth/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        email: 'admin@test.com',
+                        password: 'AdminTest123!',
+                        type: 'password'
+                    }),
+                    credentials: 'include'
+                });
+                
+                const result = await response.json();
+                
+                if (response.ok) {
+                    showStatus('✅ Login başarılı! Cookie\'ler set edildi.', 'success');
+                    setTimeout(updateCookieList, 500);
+                } else {
+                    showStatus(`❌ Login hatası: ${result.error}`, 'error');
+                }
+            } catch (error) {
+                showStatus(`❌ Network hatası: ${error.message}`, 'error');
+            }
+        }
+
+        function refreshPage() {
+            window.location.reload();
+        }
+
+        function goToApp() {
+            window.location.href = '/';
+        }
+
+        function goToAdmin() {
+            window.location.href = '/admin';
+        }
+
+        // Initialize
+        updateCookieList();
+        showStatus('Cookie durumu kontrol ediliyor...', 'warning');
+        
+        // Check if we have valid cookies
+        setTimeout(() => {
+            const hasSupabaseCookie = document.cookie.includes('sb-');
+            const hasOldCookie = document.cookie.includes('neva-session');
+            
+            if (hasSupabaseCookie) {
+                showStatus('✅ Supabase session cookie bulundu! Sistem çalışıyor.', 'success');
+            } else if (hasOldCookie) {
+                showStatus('⚠️ Sadece eski cookie var. Temizleme gerekli.', 'warning');
+            } else {
+                showStatus('ℹ️ Cookie yok. Login yapmanız gerekiyor.', 'info');
+            }
+        }, 1000);
+    </script>
+</body>
+</html>
+
+
+

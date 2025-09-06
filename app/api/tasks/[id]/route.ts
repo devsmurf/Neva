@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { supabaseAdmin } from '@/lib/supabaseClient'
+import { supabaseAdmin } from '@/lib/supabaseAdmin'
 import { getSessionUser } from '@/lib/auth-helpers'
 
 export async function PATCH(
@@ -7,8 +7,9 @@ export async function PATCH(
   { params }: { params: { id: string } }
 ) {
   try {
-    const user = await getSessionUser()
+    const user = await getSessionUser(request)
     if (!user) {
+      console.log('❌ TASK UPDATE: No user session')
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
@@ -69,7 +70,7 @@ export async function DELETE(
   { params }: { params: { id: string } }
 ) {
   try {
-    const user = await getSessionUser()
+    const user = await getSessionUser(request)
     
     if (!user) {
       console.log('❌ DELETE FAILED: No user session')

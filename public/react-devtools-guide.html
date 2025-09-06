@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>React DevTools - Yandex Browser Kurulum</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            line-height: 1.6;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #61dafb;
+            border-bottom: 3px solid #61dafb;
+            padding-bottom: 10px;
+        }
+        h2 {
+            color: #333;
+            margin-top: 30px;
+        }
+        .method {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 15px 0;
+            border-left: 4px solid #61dafb;
+        }
+        .code {
+            background: #2d3748;
+            color: #e2e8f0;
+            padding: 15px;
+            border-radius: 5px;
+            overflow-x: auto;
+            font-family: 'Courier New', monospace;
+        }
+        .warning {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 10px 0;
+        }
+        .success {
+            background: #d4edda;
+            border: 1px solid #c3e6cb;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 10px 0;
+        }
+        .step {
+            margin: 10px 0;
+            padding: 10px 0;
+        }
+        .step-number {
+            background: #61dafb;
+            color: white;
+            width: 25px;
+            height: 25px;
+            border-radius: 50%;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 10px;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔧 React Developer Tools - Yandex Browser Kurulum Rehberi</h1>
+        
+        <div class="warning">
+            <strong>⚠️ Not:</strong> Yandex Browser bazen bazı developer sitelerine erişimde sorun yaşayabilir. Bu normal bir durumdur.
+        </div>
+
+        <h2>🚀 Yöntem 1: Browser Extension (Önerilen)</h2>
+        <div class="method">
+            <div class="step">
+                <span class="step-number">1</span>
+                <strong>Yandex Browser'da Extensions sayfasını açın:</strong>
+                <div class="code">browser://extensions/</div>
+            </div>
+            
+            <div class="step">
+                <span class="step-number">2</span>
+                <strong>"Geliştirici modu"nu etkinleştirin</strong>
+            </div>
+            
+            <div class="step">
+                <span class="step-number">3</span>
+                <strong>Chrome Web Store'a gidin ve "React Developer Tools" arayın</strong>
+            </div>
+            
+            <div class="step">
+                <span class="step-number">4</span>
+                <strong>Extension'ı yükleyin ve etkinleştirin</strong>
+            </div>
+        </div>
+
+        <h2>💻 Yöntem 2: Standalone Kurulum</h2>
+        <div class="method">
+            <div class="step">
+                <span class="step-number">1</span>
+                <strong>Terminal'de global kurulum yapın:</strong>
+                <div class="code">npm install -g react-devtools</div>
+            </div>
+            
+            <div class="step">
+                <span class="step-number">2</span>
+                <strong>DevTools'u başlatın:</strong>
+                <div class="code">react-devtools</div>
+            </div>
+            
+            <div class="step">
+                <span class="step-number">3</span>
+                <strong>Projenizin HTML head bölümüne ekleyin:</strong>
+                <div class="code">&lt;script src="http://localhost:8097"&gt;&lt;/script&gt;</div>
+            </div>
+        </div>
+
+        <h2>🛠️ Yöntem 3: Geliştirme için Local Kurulum</h2>
+        <div class="method">
+            <p>Projenizdeki package.json'a devtools script'ini ekleyebiliriz:</p>
+            <div class="code">
+{
+  "scripts": {
+    "devtools": "react-devtools",
+    "dev-with-tools": "concurrently \"npm run dev\" \"npm run devtools\""
+  }
+}
+            </div>
+        </div>
+
+        <h2>🌐 Yandex Browser Alternatif Çözümler</h2>
+        <div class="method">
+            <div class="step">
+                <span class="step-number">1</span>
+                <strong>DNS ayarlarını değiştirin:</strong>
+                <ul>
+                    <li>8.8.8.8 (Google DNS)</li>
+                    <li>1.1.1.1 (Cloudflare DNS)</li>
+                </ul>
+            </div>
+            
+            <div class="step">
+                <span class="step-number">2</span>
+                <strong>VPN kullanın (geçici çözüm)</strong>
+            </div>
+            
+            <div class="step">
+                <span class="step-number">3</span>
+                <strong>Chrome veya Firefox kullanın (alternatif)</strong>
+            </div>
+        </div>
+
+        <div class="success">
+            <strong>✅ Başarı İpucu:</strong> React DevTools kurulduktan sonra, browser'ınızın developer tools'unda "Components" ve "Profiler" sekmelerini göreceksiniz.
+        </div>
+
+        <h2>🔍 Test Etmek İçin</h2>
+        <div class="method">
+            <p>Bu React uygulamanızda DevTools'un çalışıp çalışmadığını test edebilirsiniz:</p>
+            <ol>
+                <li>F12 tuşuna basın (Developer Tools)</li>
+                <li>"Components" sekmesini arayın</li>
+                <li>React component ağacını görmelisiniz</li>
+            </ol>
+        </div>
+
+        <div class="warning">
+            <strong>🚨 Sorun Devam Ederse:</strong>
+            <ul>
+                <li>Yandex Browser'ı güncelleyin</li>
+                <li>Cache'i temizleyin</li>
+                <li>Geçici olarak başka bir browser kullanın</li>
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        // Bu sayfa React DevTools test etmek için basit bir React component içerir
+        console.log('🔧 React DevTools Test Sayfası Yüklendi');
+        console.log('👀 F12 tuşuna basıp "Components" sekmesini arayın');
+    </script>
+</body>
+</html>
+
+
+

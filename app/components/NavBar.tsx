@@ -1,6 +1,6 @@
 "use client"
 import Link from 'next/link'
-import { useSession } from './SessionProvider'
+import { useSession } from './SupabaseSessionProvider'
 import { usePathname } from 'next/navigation'
 import { useState, createContext, useContext, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
@@ -66,7 +66,7 @@ function TabNavigationWithBadge() {
       // If this is first time, mark all current approved tasks as seen
       if (!seenApprovedIds) {
         try {
-          const response = await fetch('/api/tasks?my_tasks=true')
+          const response = await fetch('/api/tasks?my_tasks=true', { credentials: 'include' })
           if (response.ok) {
             const allMyTasks = await response.json()
             const approvedTaskIds = allMyTasks
@@ -85,45 +85,48 @@ function TabNavigationWithBadge() {
     initializeSeenTasks()
   }, [])
 
-  // Check for newly approved tasks
-  useEffect(() => {
-    const checkNewApprovals = async () => {
-      try {
-        const response = await fetch('/api/tasks?my_tasks=true&newly_approved=true')
-        if (response.ok) {
-          const data = await response.json()
+  // Check for newly approved tasks function
+  const checkNewApprovals = async () => {
+    try {
+      const response = await fetch('/api/tasks?my_tasks=true&newly_approved=true', { credentials: 'include' })
+      if (response.ok) {
+        const data = await response.json()
 
-          // Get previously seen approved task IDs from localStorage
-          const seenApprovedIds = JSON.parse(localStorage.getItem('neva-seen-approved') || '[]')
+        // Get previously seen approved task IDs from localStorage
+        const seenApprovedIds = JSON.parse(localStorage.getItem('neva-seen-approved') || '[]')
 
-          // Filter out tasks we've already seen
-          const trulyNewApproved = data.filter((task: any) =>
-            task.is_approved && !seenApprovedIds.includes(task.id)
-          )
+        // Filter out tasks we've already seen
+        const trulyNewApproved = data.filter((task: any) =>
+          task.is_approved && !seenApprovedIds.includes(task.id)
+        )
 
-          console.log('🔔 Checking notifications:', {
-            totalApproved: data.length,
-            previouslySeen: seenApprovedIds.length,
-            trulyNew: trulyNewApproved.length,
-            newTaskIds: trulyNewApproved.map((t: any) => t.id)
-          })
+        console.log('🔔 Checking notifications:', {
+          totalApproved: data.length,
+          previouslySeen: seenApprovedIds.length,
+          trulyNew: trulyNewApproved.length,
+          newTaskIds: trulyNewApproved.map((t: any) => t.id)
+        })
 
-          setNewApprovedCount(trulyNewApproved.length)
-        }
-      } catch (error) {
-        console.error('Error checking new approvals:', error)
+        setNewApprovedCount(trulyNewApproved.length)
       }
+    } catch (error) {
+      console.error('Error checking new approvals:', error)
     }
+  }
+
+  // Check for newly approved tasks more frequently
+  useEffect(() => {
 
     // Wait a bit for initialization to complete
     const timer = setTimeout(checkNewApprovals, 1000)
 
-    // No auto-refresh - user can manually refresh with 🔄 button
+    // Auto-refresh every 10 seconds to catch new approvals
+    const interval = setInterval(checkNewApprovals, 10000)
     // const interval = setInterval(checkNewApprovals, 5 * 60 * 1000)
 
     return () => {
       clearTimeout(timer)
-      // clearInterval(interval)
+      clearInterval(interval)
     }
   }, [])
 
@@ -134,7 +137,7 @@ function TabNavigationWithBadge() {
 
     // Mark all currently approved tasks as seen
     try {
-      const response = await fetch('/api/tasks?my_tasks=true')
+      const response = await fetch('/api/tasks?my_tasks=true', { credentials: 'include' })
       if (response.ok) {
         const allMyTasks = await response.json()
         const approvedTaskIds = allMyTasks
@@ -248,7 +251,10 @@ export default function NavBar() {
               </div>
               <button
                 className="btn btn-primary text-[10px] md:text-xs px-1 md:px-2 py-0.5 flex-shrink-0"
-                onClick={() => { logout(); router.push('/') }}
+                onClick={async () => {
+                  console.log('🔘 Logout button clicked')
+                  await logout()
+                }}
               >
                 Çıkış
               </button>
